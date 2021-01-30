@@ -26,6 +26,7 @@ namespace AppSpace
         private bool _isLineDrag = false;
         private bool _isLineDragDone = false;
         private int clickCount;
+        private int moduleId;
 
         private Line line = new Line();
         Polyline polyline;
@@ -33,17 +34,19 @@ namespace AppSpace
         private bool isdragging = false;
         private Rectangle rectFrom, rectTo;
 
-        private List<Rectangle> inPins;
-        private List<Rectangle> outPins;
+        private List<Rectangle> modules;
+        private List<Rectangle> deactivated;
+
 
         public MainWindow()
         {
             InitializeComponent();
             generateMenuItems();
             clickCount = 0;
+            moduleId = 0;
 
-            inPins = new List<Rectangle>();
-            outPins = new List<Rectangle>();
+            modules = new List<Rectangle>();
+            deactivated = new List<Rectangle>();
 
             /*//Add to main menu
             MenuItem newMenuItem1 = new MenuItem();
@@ -94,10 +97,32 @@ namespace AppSpace
                 Stroke = Brushes.Gray,
                 StrokeThickness = 0
             };
+            
+            Pin inpin1 = new Pin
+            {
+                Connected = false,
+                Hidden = false,
+                Name = "A",
+                Type = Types.IN,
+                Rectangle = vedHorni
+            };
 
-            Rectangle[] pole = new Rectangle[2];
-            pole[0] = vedHorni;
-            pole[1] = vedDolni;
+            Pin outpin1 = new Pin
+            {
+                Connected = false,
+                Hidden = false,
+                Name = "B",
+                Type = Types.OUT,
+                Rectangle = vedDolni
+            };
+
+
+            Module module = new Module
+            {
+                Name = "Mod " + (++moduleId)
+            };
+            module.InPins.Add(inpin1);
+            module.OutPins.Add(outpin1);
 
             Rectangle hlavni = new Rectangle
             {
@@ -109,7 +134,7 @@ namespace AppSpace
                 Fill = Brushes.Black,
                 Stroke = Brushes.Gray,
                 StrokeThickness = 0,
-                Tag = pole
+                Tag = module
             };
 
             Canvas.SetLeft(hlavni, 0);
@@ -143,8 +168,8 @@ namespace AppSpace
             vedDolni.MouseLeftButtonUp += ved_MouseLeftButtonUp;
             vedHorni.MouseLeftButtonDown += ved_MouseLeftButtonDown;
 
-            vedHorni.Tag = new List<PolylineTagData>();
-            vedDolni.Tag = new List<PolylineTagData>();
+            vedHorni.Tag = inpin1;// new List<PolylineTagData>();
+            vedDolni.Tag = outpin1;// new List<PolylineTagData>();
 
             canvas.Children.Add(hlavni);
             canvas.Children.Add(vedHorni);
@@ -153,8 +178,8 @@ namespace AppSpace
 
             canvas.MouseMove += canvas_MouseMove;
             canvas.MouseLeftButtonUp += canvas_MouseUp;
-            inPins.Add(vedHorni);
-            outPins.Add(vedDolni);
+           
+            modules.Add(hlavni);
             
         }
 
@@ -163,28 +188,33 @@ namespace AppSpace
             if (_isLineDrag) return;
             Rectangle el = (Rectangle)sender;
             _isRectDragInProg = true;
-            //el.CaptureMouse();            
-            Rectangle[] pol = (Rectangle[])el.Tag;
+            //el.CaptureMouse();
+            Module pol = (Module)el.Tag;
             Panel.SetZIndex(el, 100);
-            Panel.SetZIndex(pol[0], 101);
-            Panel.SetZIndex(pol[1], 102);
+            Panel.SetZIndex(pol.InPins[0].Rectangle, 101);
+            Panel.SetZIndex(pol.OutPins[0].Rectangle, 102);           
         }
 
         private void rect_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (_isLineDrag) return;
-            
+
             Rectangle el = (Rectangle)sender;
             _isRectDragInProg = false;
-           
-            Rectangle[] pol = (Rectangle[])el.Tag;
-            Panel.SetZIndex(el, 1);
-            Panel.SetZIndex(pol[0], 1);
-            Panel.SetZIndex(pol[1], 1);
 
-            foreach (Rectangle r in pol)
-            {
-                foreach (PolylineTagData p in (List<PolylineTagData>)r.Tag)
+            Module module = (Module)el.Tag;
+            Panel.SetZIndex(el, 1);
+            Panel.SetZIndex(module.InPins[0].Rectangle, 1);
+            Panel.SetZIndex(module.OutPins[0].Rectangle, 1);
+            PinsRestoreLines(module.InPins);
+            PinsRestoreLines(module.OutPins);
+        }
+
+        private void PinsRestoreLines(List<Pin> data)
+        {
+            foreach (Pin r in data)
+            {                
+                foreach (PolylineTagData p in r.ActiveConnections)
                 {
                     //PolylineTagData p = (PolylineTagData)r?.Tag;
                     if (p != null)
@@ -197,7 +227,7 @@ namespace AppSpace
                 }
             }
         }
-        
+
         private void ved_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (_isLineDragDone)
@@ -246,24 +276,31 @@ namespace AppSpace
             double top = mousePos.Y - (el.ActualHeight / 2);
             Canvas.SetLeft(el, left);
             Canvas.SetTop(el, top);
-           
-            foreach (Rectangle r in (Rectangle[])el.Tag)
+
+            Module module = (Module)el.Tag;
+
+            MovePinsOnMouseMove(left, top, module.InPins);
+            MovePinsOnMouseMove(left, top, module.OutPins);
+        }
+
+        private void MovePinsOnMouseMove(double left, double top, List<Pin> data)
+        {
+            foreach (Pin p in data)
             {
-                if (r != null)
+                if (p != null)
                 {
+                    Rectangle r = p.Rectangle;
                     Canvas.SetLeft(r, left);
                     Canvas.SetTop(r, top);
-                    foreach (PolylineTagData p in (List<PolylineTagData>)r.Tag)
+                    foreach (PolylineTagData po in p.ActiveConnections)
                     {
-                        if (p != null)
+                        if (po != null)
                         {
-                            canvas.Children.Remove(p.Polyline);
+                            canvas.Children.Remove(po.Polyline);
                         }
                     }
-                    //PolylineTagData p = (PolylineTagData)r?.Tag;
-                    
                 }
-            }  
+            }
         }
 
         private void EventMouseOver(object sender, MouseEventArgs e)
@@ -301,8 +338,10 @@ namespace AppSpace
                 FileInfo[] Files = sub.GetFiles("*.v");
                 foreach (FileInfo file in Files)
                 {
-                    MenuItem newSubMenuItem = new MenuItem();                   
-                    newSubMenuItem.Header = file.Name;
+                    MenuItem newSubMenuItem = new MenuItem();   
+                    string name = file.Name.Remove(0, 1);
+                    name = name.Remove(name.Length -2);
+                    newSubMenuItem.Header = name;
                     newMenuItem.Items.Add(newSubMenuItem);
                     
                 }
@@ -328,10 +367,10 @@ namespace AppSpace
                 RecTo = rectTo,
                 Polyline = polyline
             };
-            List<PolylineTagData> list = (List<PolylineTagData>)rectFrom.Tag;
-            list.Add(data);
-            list = (List<PolylineTagData>)rectTo.Tag;
-            list.Add(data);
+            Pin pin = (Pin)rectFrom.Tag;
+            pin.ActiveConnections.Add(data);
+            pin= (Pin)rectTo.Tag;
+            pin.ActiveConnections.Add(data);           
 
             canvas.Children.Remove(line);
             line = null;
@@ -358,8 +397,8 @@ namespace AppSpace
                 Console.WriteLine("asd");
             }
 
-                // get the position of the mouse relative to the Canvas
-                var mousePos = e.GetPosition(canvas);
+            // get the position of the mouse relative to the Canvas
+            var mousePos = e.GetPosition(canvas);
 
             // center the rect on the mouse
             double left = mousePos.X - (el.ActualWidth / 2);
