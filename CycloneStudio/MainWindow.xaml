@@ -5,9 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AppSpace"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Cyclone Studio v0.01" Height="450" Width="800">
     <Grid>
-        <Canvas x:Name="canvas" Margin="0,35,0,0" Grid.ColumnSpan="1" Background="#FFE6E6E6"/>
+        <ScrollViewer Grid.ColumnSpan="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,35,0,0">
+            <Canvas x:Name="canvas" Height="980" Width="1920" Background="#FFE6E6E6"/>
+        </ScrollViewer>
+
         <Menu x:Name="mmMenu" Height="30" VerticalAlignment="Top" Background="#FFC5C5C5" FontSize="14">
             <MenuItem Background="Red" Header="lkjkl" Height="30" Width="60"/>
         </Menu>

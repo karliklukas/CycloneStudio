@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
 using AppSpace.structs;
+using System.Windows.Media.Effects;
 
 namespace AppSpace
 {
@@ -36,6 +37,7 @@ namespace AppSpace
 
         private List<Rectangle> modules;
         private List<Rectangle> deactivated;
+
 
 
         public MainWindow()
@@ -64,7 +66,10 @@ namespace AppSpace
             newMenuItem3.Click += new RoutedEventHandler(menuItemClick);
         }
 
-        private void GenerujBlok()
+        
+
+
+    private void GenerujBlok()
         {
 
             Label popis = new Label
@@ -74,8 +79,8 @@ namespace AppSpace
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
                 Content = "text",
-                Margin = new Thickness(50,50, 0, 0),
-                Foreground = Brushes.Red,               
+                Margin = new Thickness(50, 50, 0, 0),
+                Foreground = Brushes.Red,
                 FontWeight = FontWeights.Bold,
                 IsHitTestVisible = false
             };
@@ -86,7 +91,7 @@ namespace AppSpace
                 Height = 10 * 2,
                 Fill = Brushes.Green,
                 Stroke = Brushes.Gray,
-                StrokeThickness = 0        
+                StrokeThickness = 0
             };
             Rectangle vedDolni = new Rectangle
             {
@@ -94,10 +99,10 @@ namespace AppSpace
                 Width = 10 * 2,
                 Height = 10 * 2,
                 Fill = Brushes.Yellow,
-                Stroke = Brushes.Gray,
+                Stroke = Brushes.OrangeRed,
                 StrokeThickness = 0
             };
-            
+
             Pin inpin1 = new Pin
             {
                 Connected = false,
@@ -124,9 +129,18 @@ namespace AppSpace
             module.InPins.Add(inpin1);
             module.OutPins.Add(outpin1);
 
-            Rectangle hlavni = new Rectangle
+            DropShadowEffect effect = new DropShadowEffect
             {
-                Margin = new Thickness(20,20, 0, 0),
+                Color = Color.FromRgb(100, 100, 100),
+                Direction = 225,
+                ShadowDepth = 8,
+                BlurRadius = 5,
+                Opacity = 0.3
+            };
+
+            Rectangle g = new Rectangle
+            {
+                Margin = new Thickness(0, 0, 0, 0),
                 Width = 50 * 2,
                 Height = 50 * 2,
                 RadiusX = 5,
@@ -134,39 +148,60 @@ namespace AppSpace
                 Fill = Brushes.Black,
                 Stroke = Brushes.Gray,
                 StrokeThickness = 0,
-                Tag = module
+                Tag = module,
+                Effect = effect
+                
             };
+            Grid hlavni = new Grid
+            {
+                Margin = new Thickness(20, 20, 0, 0),
+                Width = 50 * 2,
+                Height = 50 * 2,
+                Background= Brushes.Transparent,
+                Tag = g,
+                Effect = effect                           
+            };
+
+            
+
+            TextBlock someText = new TextBlock();
+            someText.Text = module.Name;
+            someText.Foreground = Brushes.White;
+            FontSizeConverter fSizeConverter = new FontSizeConverter();
+            someText.FontSize = (double)fSizeConverter.ConvertFromString("10pt");
+            someText.Margin = new Thickness(5, 5, 0, 0);
+
+            TextBlock someText1 = new TextBlock();
+            someText1.Text = "Raj Beniwal";
+            someText1.Foreground = Brushes.White;
+            FontSizeConverter fSizeConverter1 = new FontSizeConverter();
+            someText1.FontSize = (double)fSizeConverter1.ConvertFromString("10pt");
+            someText1.Margin = new Thickness(5, 70, 0, 0);
+
+            hlavni.Children.Add(g);
+            hlavni.Children.Add(someText);
+            hlavni.Children.Add(someText1);
 
             Canvas.SetLeft(hlavni, 0);
             Canvas.SetTop(hlavni, 0);
-            Canvas.SetLeft(vedDolni, 0); 
+            Canvas.SetLeft(vedDolni, 0);
             Canvas.SetTop(vedDolni, 0);
             Canvas.SetTop(vedHorni, 0);
             Canvas.SetLeft(vedHorni, 0);
-           
+
 
             Panel.SetZIndex(hlavni, 1);
             Panel.SetZIndex(vedHorni, 1);
             Panel.SetZIndex(vedDolni, 1);
 
-            hlavni.MouseEnter += EventMouseOver;
-            vedHorni.MouseEnter += EventMouseOver;
-            vedDolni.MouseEnter += EventMouseOver;
-            hlavni.MouseLeave += EventMouseLeave;
-            vedHorni.MouseLeave += EventMouseLeave;
-            vedDolni.MouseLeave += EventMouseLeave;
-
+            hlavni.MouseEnter += EventMouseOverGrid;
+            hlavni.MouseLeave += EventMouseLeaveGrid;
             hlavni.MouseLeftButtonDown += rect_MouseLeftButtonDown;
             hlavni.MouseLeftButtonUp += rect_MouseLeftButtonUp;
-            hlavni.MouseMove += rect_MouseMove;
+            hlavni.MouseMove += rect_MouseMove;         
 
-            //vedHorni.MouseLeftButtonDown += ved_MouseLeftButtonDown;
-            vedHorni.MouseLeftButtonUp += ved_MouseLeftButtonUp;
-
-            vedDolni.MouseLeftButtonDown += ved_MouseLeftButtonDown;
-
-            vedDolni.MouseLeftButtonUp += ved_MouseLeftButtonUp;
-            vedHorni.MouseLeftButtonDown += ved_MouseLeftButtonDown;
+            SetPinEvents(vedDolni);
+            SetPinEvents(vedHorni);
 
             vedHorni.Tag = inpin1;// new List<PolylineTagData>();
             vedDolni.Tag = outpin1;// new List<PolylineTagData>();
@@ -178,18 +213,27 @@ namespace AppSpace
 
             canvas.MouseMove += canvas_MouseMove;
             canvas.MouseLeftButtonUp += canvas_MouseUp;
-           
-            modules.Add(hlavni);
-            
+
+            modules.Add(g);
+
+        }
+
+        private void SetPinEvents(Rectangle rec)
+        {
+            rec.MouseLeftButtonDown += ved_MouseLeftButtonDown;
+            rec.MouseLeftButtonUp += ved_MouseLeftButtonUp;
+            rec.MouseLeave += EventMouseLeave;
+            rec.MouseEnter += EventMouseOverpin;
         }
 
         private void rect_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (_isLineDrag) return;
-            Rectangle el = (Rectangle)sender;
+            Grid el = (Grid)sender;
+            Rectangle rec = (Rectangle)el.Tag;
             _isRectDragInProg = true;
-            //el.CaptureMouse();
-            Module pol = (Module)el.Tag;
+           
+            Module pol = (Module)rec.Tag;
             Panel.SetZIndex(el, 100);
             Panel.SetZIndex(pol.InPins[0].Rectangle, 101);
             Panel.SetZIndex(pol.OutPins[0].Rectangle, 102);           
@@ -199,10 +243,11 @@ namespace AppSpace
         {
             if (_isLineDrag) return;
 
-            Rectangle el = (Rectangle)sender;
+            Grid el = (Grid)sender;
+            Rectangle rec = (Rectangle)el.Tag;
             _isRectDragInProg = false;
 
-            Module module = (Module)el.Tag;
+            Module module = (Module)rec.Tag;
             Panel.SetZIndex(el, 1);
             Panel.SetZIndex(module.InPins[0].Rectangle, 1);
             Panel.SetZIndex(module.OutPins[0].Rectangle, 1);
@@ -235,17 +280,43 @@ namespace AppSpace
                 _isLineDragDone = false;
                 return;
             }
-            Console.WriteLine("start");
+            
             Rectangle el = (Rectangle)sender;
             rectFrom = el;
             _isLineDrag = true;
             clickCount = 0;
 
+            Pin pinInfo = (Pin)el.Tag;
+            Types t = pinInfo.Type;
+            deactivated.Clear();
+            foreach (Rectangle r in modules)
+            {
+                Module m = (Module)r.Tag;
+                r.IsHitTestVisible = false;
+                deactivated.Add(r);
+                if (t == Types.IN)
+                {
+                    foreach (Pin p in m.InPins)
+                    {
+                        p.Rectangle.IsHitTestVisible = false;
+                        deactivated.Add(p.Rectangle);
+                    }
+                }
+                else
+                {
+                    foreach (Pin p in m.OutPins)
+                    {
+                        p.Rectangle.IsHitTestVisible = false;
+                        deactivated.Add(p.Rectangle);
+                    }
+                }
+            }
+
             line = new Line
             {
                 Visibility = Visibility.Visible,
                 StrokeThickness = 2,
-                Stroke = Brushes.Black
+                Stroke = Brushes.DarkBlue
             };
             canvas.Children.Add(line);
            
@@ -264,10 +335,10 @@ namespace AppSpace
         }
 
         private void rect_MouseMove(object sender, MouseEventArgs e)
-        {
-            Rectangle el = (Rectangle)sender;
+        {           
             if (!_isRectDragInProg) return;
-
+            Grid el = (Grid)sender;
+            Rectangle rec = (Rectangle)el.Tag;
             // get the position of the mouse relative to the Canvas
             var mousePos = e.GetPosition(canvas);
 
@@ -277,7 +348,7 @@ namespace AppSpace
             Canvas.SetLeft(el, left);
             Canvas.SetTop(el, top);
 
-            Module module = (Module)el.Tag;
+            Module module = (Module)rec.Tag;
 
             MovePinsOnMouseMove(left, top, module.InPins);
             MovePinsOnMouseMove(left, top, module.OutPins);
@@ -306,15 +377,40 @@ namespace AppSpace
         private void EventMouseOver(object sender, MouseEventArgs e)
         {
             Rectangle el = (Rectangle)sender;
-            el.StrokeThickness = 3;           
-            
+            el.StrokeThickness = 3;
+        }
+
+        private void EventMouseOverGrid(object sender, MouseEventArgs e)
+        {
+            Grid el = (Grid)sender;
+            Rectangle rec = (Rectangle)el.Tag;
+            rec.StrokeThickness = 3;
+        }
+
+        private void EventMouseOverpin(object sender, MouseEventArgs e)
+        {
+            Rectangle el = (Rectangle)sender;
+            el.StrokeThickness = 3;
+            if (this.Cursor != Cursors.Wait)
+                Mouse.OverrideCursor = Cursors.Hand;
+
         }
 
         private void EventMouseLeave(object sender, MouseEventArgs e)
         {
             Rectangle el = (Rectangle)sender;
             el.StrokeThickness = 0;
-           
+            if (this.Cursor != Cursors.Wait)
+                Mouse.OverrideCursor = Cursors.Arrow;
+
+        }
+
+        private void EventMouseLeaveGrid(object sender, MouseEventArgs e)
+        {
+            Grid el = (Grid)sender;
+            Rectangle rec = (Rectangle)el.Tag;
+            rec.StrokeThickness = 0;
+
         }
 
         private void menuItemClick(object sender, RoutedEventArgs e)
@@ -357,8 +453,9 @@ namespace AppSpace
             CalculateNewCoordinates(el, out double x, out double y);
             line.X2 = x;
             line.Y2 = y;
-            
-            _isLineDrag = false;            
+            ChangePinHitVisibility(true);
+
+            _isLineDrag = false;
             GenerateLine(line.X1, line.Y1, line.X2, line.Y2);
             PolylineTagData data = new PolylineTagData
             {
@@ -369,8 +466,8 @@ namespace AppSpace
             };
             Pin pin = (Pin)rectFrom.Tag;
             pin.ActiveConnections.Add(data);
-            pin= (Pin)rectTo.Tag;
-            pin.ActiveConnections.Add(data);           
+            pin = (Pin)rectTo.Tag;
+            pin.ActiveConnections.Add(data);
 
             canvas.Children.Remove(line);
             line = null;
@@ -379,33 +476,13 @@ namespace AppSpace
             Console.WriteLine("asd");
         }
 
-        /*private void ved_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void ChangePinHitVisibility(bool change)
         {
-            Line el = (Line)sender;
-            isdragging = false;
-            el.ReleaseMouseCapture();
-            Console.WriteLine("up");
-        }*/
-
-        private void ved_MouseMove(object sender, MouseEventArgs e)
-        {
-            Line el = (Line)sender;
-            if (!isdragging) return;
-
-            if (isdragging == true && e.LeftButton == MouseButtonState.Pressed)
-            {
-                Console.WriteLine("asd");
+            foreach (Rectangle r in deactivated)
+            {               
+                r.IsHitTestVisible = change;
             }
-
-            // get the position of the mouse relative to the Canvas
-            var mousePos = e.GetPosition(canvas);
-
-            // center the rect on the mouse
-            double left = mousePos.X - (el.ActualWidth / 2);
-            double top = mousePos.Y - (el.ActualHeight / 2);
-            el.X2 = mousePos.X;
-            el.Y2 = mousePos.Y;           
-
+            deactivated.Clear();
         }
 
         private void canvas_MouseMove(object sender, MouseEventArgs e)
@@ -435,6 +512,7 @@ namespace AppSpace
             //if (clickCount < 3) return;
             _isLineDrag = false;
             canvas.Children.Remove(line);
+            ChangePinHitVisibility(true);
             line = null;
             polyline = null;
             rectFrom = null;
@@ -450,11 +528,19 @@ namespace AppSpace
                 endX = tmpX;
                 endY = tmpY;
             }
+            DropShadowEffect effect = new DropShadowEffect {
+                Color = Color.FromRgb(100, 100, 100),
+                Direction = 225,
+                ShadowDepth = 8,
+                BlurRadius = 5,
+                Opacity = 0.3
+            };
 
             polyline = new Polyline
             {
                 Stroke = Brushes.Black,
-                StrokeThickness = 2
+                StrokeThickness = 2,
+                Effect = effect
             };
             // Create a collection of points for a polyline  
             Point Point1 = new Point(startX, startY);
@@ -485,7 +571,6 @@ namespace AppSpace
             double y = Canvas.GetTop(rectangle);
             xOut = x + rectangle.Margin.Left + (rectangle.ActualWidth / 2);
             yOut = y + rectangle.Margin.Top + (rectangle.ActualHeight / 2);
-        }
-
+        }       
     }
 }
