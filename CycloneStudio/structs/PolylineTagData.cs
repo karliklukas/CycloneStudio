@@ -9,21 +9,21 @@ namespace AppSpace.structs
 {
     class PolylineTagData
     {
-        private int id;        
-        public int Id { get => id; set => id = value; }
+        private string id;        
+        public string Id { get => id; set => id = value; }
 
-        private Rectangle recfrom;
-        public Rectangle RecFrom
+        private Rectangle recpinin;
+        public Rectangle RecPinIn
         {
-            get { return recfrom; }
-            set { recfrom = value; }
+            get { return recpinin; }
+            set { recpinin = value; }
         }
 
-        private Rectangle recto;
-        public Rectangle RecTo
+        private Rectangle recpinout;
+        public Rectangle RecPinOut
         {
-            get { return recto; }
-            set { recto = value; }
+            get { return recpinout; }
+            set { recpinout = value; }
         }
 
         private Polyline polyline;

@@ -35,5 +35,18 @@ namespace AppSpace.structs
         {
             activeConnections = new List<PolylineTagData>();
         }
+
+        public bool CompareConnections(Rectangle endPin)
+        {
+            foreach (PolylineTagData data in ActiveConnections)
+            {
+                if (data.RecPinOut == endPin || data.RecPinIn == endPin)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

@@ -25,14 +25,12 @@ namespace AppSpace
     {
         private bool _isRectDragInProg = false;
         private bool _isLineDrag = false;
-        private bool _isLineDragDone = false;
-        private int clickCount;
+        private bool _isLineDragDone = false;        
         private int moduleId;
+        private int wireId;
 
         private Line line = new Line();
-        Polyline polyline;
-        private Point p;
-        private bool isdragging = false;
+        Polyline polyline;            
         private Rectangle rectFrom, rectTo;
 
         private List<Rectangle> modules;
@@ -43,9 +41,9 @@ namespace AppSpace
         public MainWindow()
         {
             InitializeComponent();
-            generateMenuItems();
-            clickCount = 0;
+            generateMenuItems();            
             moduleId = 0;
+            wireId = 0;
 
             modules = new List<Rectangle>();
             deactivated = new List<Rectangle>();
@@ -62,14 +60,14 @@ namespace AppSpace
             MenuItem newMenuItem3 = new MenuItem();
             newMenuItem3.Header = "Generuj";
             newExistMenuItem.Items.Add(newMenuItem3);
-
+            
             newMenuItem3.Click += new RoutedEventHandler(menuItemClick);
         }
 
         
 
 
-    private void GenerujBlok()
+        private void GenerujBlok()
         {
 
             Label popis = new Label
@@ -264,10 +262,10 @@ namespace AppSpace
                     //PolylineTagData p = (PolylineTagData)r?.Tag;
                     if (p != null)
                     {
-                        CalculateNewCoordinates(p.RecFrom, out double xs, out double ys);
-                        CalculateNewCoordinates(p.RecTo, out double xe, out double ye);
+                        CalculateNewCoordinates(p.RecPinIn, out double xs, out double ys);
+                        CalculateNewCoordinates(p.RecPinOut, out double xe, out double ye);
 
-                        p.Polyline = GenerateLine(xs, ys, xe, ye);
+                        p.Polyline = GenerateLine(xs, ys, xe, ye, p.Id);
                     }
                 }
             }
@@ -283,33 +281,39 @@ namespace AppSpace
             
             Rectangle el = (Rectangle)sender;
             rectFrom = el;
-            _isLineDrag = true;
-            clickCount = 0;
+            _isLineDrag = true;           
 
             Pin pinInfo = (Pin)el.Tag;
-            Types t = pinInfo.Type;
+            Types startPinType = pinInfo.Type;
             deactivated.Clear();
             foreach (Rectangle r in modules)
             {
                 Module m = (Module)r.Tag;
-                r.IsHitTestVisible = false;
-                deactivated.Add(r);
-                if (t == Types.IN)
+                bool sameModule = true;
+
+                if (m.InPins.Contains(pinInfo) || m.OutPins.Contains(pinInfo))
                 {
-                    foreach (Pin p in m.InPins)
-                    {
-                        p.Rectangle.IsHitTestVisible = false;
-                        deactivated.Add(p.Rectangle);
-                    }
+                    sameModule = false;
                 }
-                else
+
+                foreach (Pin p in m.InPins)
                 {
-                    foreach (Pin p in m.OutPins)
+                    if (startPinType != Types.IN && !pinInfo.CompareConnections(p.Rectangle) && sameModule && p.ActiveConnections.Count == 0)
                     {
-                        p.Rectangle.IsHitTestVisible = false;
-                        deactivated.Add(p.Rectangle);
+                        continue;
                     }
+                    p.Rectangle.IsHitTestVisible = false;
+                    deactivated.Add(p.Rectangle);
                 }
+                foreach (Pin p in m.OutPins)
+                {
+                    if (startPinType != Types.OUT && !pinInfo.CompareConnections(p.Rectangle) && sameModule)
+                    {
+                        continue;
+                    }
+                    p.Rectangle.IsHitTestVisible = false;
+                    deactivated.Add(p.Rectangle);
+                }                
             }
 
             line = new Line
@@ -329,9 +333,7 @@ namespace AppSpace
             line.Y1 = y + el.Margin.Top + (el.ActualHeight / 2);
             line.Y2 = y + el.Margin.Top + (el.ActualHeight / 2) - 10;
 
-            Panel.SetZIndex(line, 100);
-
-            isdragging = true;
+            Panel.SetZIndex(line, 100);            
         }
 
         private void rect_MouseMove(object sender, MouseEventArgs e)
@@ -367,6 +369,7 @@ namespace AppSpace
                     {
                         if (po != null)
                         {
+                            canvas.Children.Remove((Label)po.Polyline.Tag);
                             canvas.Children.Remove(po.Polyline);
                         }
                     }
@@ -456,18 +459,27 @@ namespace AppSpace
             ChangePinHitVisibility(true);
 
             _isLineDrag = false;
-            GenerateLine(line.X1, line.Y1, line.X2, line.Y2);
+           
+
+            Pin pinFrom = (Pin)rectFrom.Tag;
+            Pin pinTo = (Pin)rectTo.Tag;
             PolylineTagData data = new PolylineTagData
             {
-                Id = 1,
-                RecFrom = rectFrom,
-                RecTo = rectTo,
-                Polyline = polyline
+                Id = "w"+ ++wireId
             };
-            Pin pin = (Pin)rectFrom.Tag;
-            pin.ActiveConnections.Add(data);
-            pin = (Pin)rectTo.Tag;
-            pin.ActiveConnections.Add(data);
+            data.Polyline = GenerateLine(line.X1, line.Y1, line.X2, line.Y2, data.Id);
+            if (pinFrom.Type == Types.IN)
+            {
+                data.RecPinIn = rectTo;
+                data.RecPinOut = rectFrom;                
+            } else
+            {
+                data.RecPinIn = rectFrom;
+                data.RecPinOut = rectTo;
+            }            
+            
+            pinFrom.ActiveConnections.Add(data);            
+            pinTo.ActiveConnections.Add(data);
 
             canvas.Children.Remove(line);
             line = null;
@@ -518,7 +530,7 @@ namespace AppSpace
             rectFrom = null;
         }
 
-        private Polyline GenerateLine(double startX, double startY, double endX, double endY)
+        private Polyline GenerateLine(double startX, double startY, double endX, double endY, string name)
         {               
             if (startX >= endX)
             {
@@ -556,10 +568,19 @@ namespace AppSpace
                 Point4,
                 Point5
             };
+
+            Label text = new Label
+            {
+                Content = name
+            };
+            polyline.Tag = text;
+            Canvas.SetLeft(text, startX+10);
+            Canvas.SetTop(text, startY-25);
             // Set Polyline.Points properties  
             polyline.Points = polygonPoints;
             // Add polyline to the page  
             canvas.Children.Add(polyline);
+            canvas.Children.Add(text);
 
             return polyline;
 
