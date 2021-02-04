@@ -125,16 +125,7 @@ namespace AppSpace
                 Name = "Mod " + (++moduleId)
             };
             module.InPins.Add(inpin1);
-            module.OutPins.Add(outpin1);
-
-            DropShadowEffect effect = new DropShadowEffect
-            {
-                Color = Color.FromRgb(100, 100, 100),
-                Direction = 225,
-                ShadowDepth = 8,
-                BlurRadius = 5,
-                Opacity = 0.3
-            };
+            module.OutPins.Add(outpin1);            
 
             Rectangle g = new Rectangle
             {
@@ -147,33 +138,33 @@ namespace AppSpace
                 Stroke = Brushes.Gray,
                 StrokeThickness = 0,
                 Tag = module,
-                Effect = effect
-                
-            };
+                Effect = GetShadowEffect()
+
+        };
             Grid hlavni = new Grid
             {
                 Margin = new Thickness(20, 20, 0, 0),
                 Width = 50 * 2,
                 Height = 50 * 2,
-                Background= Brushes.Transparent,
+                Background = Brushes.Transparent,
                 Tag = g,
-                Effect = effect                           
+                Effect = GetShadowEffect()
             };
 
-            
+
 
             TextBlock someText = new TextBlock();
             someText.Text = module.Name;
             someText.Foreground = Brushes.White;
             FontSizeConverter fSizeConverter = new FontSizeConverter();
-            someText.FontSize = (double)fSizeConverter.ConvertFromString("10pt");
-            someText.Margin = new Thickness(5, 5, 0, 0);
+            someText.FontSize = (double)fSizeConverter.ConvertFromString("7pt");
+            someText.Margin = new Thickness(25, 5, 0, 0);
 
             TextBlock someText1 = new TextBlock();
-            someText1.Text = "Raj Beniwal";
+            someText1.Text = "Cau cau";
             someText1.Foreground = Brushes.White;
             FontSizeConverter fSizeConverter1 = new FontSizeConverter();
-            someText1.FontSize = (double)fSizeConverter1.ConvertFromString("10pt");
+            someText1.FontSize = (double)fSizeConverter1.ConvertFromString("7pt");
             someText1.Margin = new Thickness(5, 70, 0, 0);
 
             hlavni.Children.Add(g);
@@ -196,7 +187,7 @@ namespace AppSpace
             hlavni.MouseLeave += EventMouseLeaveGrid;
             hlavni.MouseLeftButtonDown += rect_MouseLeftButtonDown;
             hlavni.MouseLeftButtonUp += rect_MouseLeftButtonUp;
-            hlavni.MouseMove += rect_MouseMove;         
+            hlavni.MouseMove += rect_MouseMove;
 
             SetPinEvents(vedDolni);
             SetPinEvents(vedHorni);
@@ -215,6 +206,8 @@ namespace AppSpace
             modules.Add(g);
 
         }
+
+        
 
         private void SetPinEvents(Rectangle rec)
         {
@@ -265,7 +258,7 @@ namespace AppSpace
                         CalculateNewCoordinates(p.RecPinIn, out double xs, out double ys);
                         CalculateNewCoordinates(p.RecPinOut, out double xe, out double ye);
 
-                        p.Polyline = GenerateLine(xs, ys, xe, ye, p.Id);
+                        p.Polyline = GenerateLine(xs, ys, xe, ye, p.Id, p);
                     }
                 }
             }
@@ -320,7 +313,8 @@ namespace AppSpace
             {
                 Visibility = Visibility.Visible,
                 StrokeThickness = 2,
-                Stroke = Brushes.DarkBlue
+                Stroke = Brushes.DarkBlue,
+                Effect = GetShadowEffect()
             };
             canvas.Children.Add(line);
            
@@ -425,7 +419,14 @@ namespace AppSpace
         {
             DirectoryInfo d = new DirectoryInfo(@"../../components");
             DirectoryInfo[] subdir = d.GetDirectories();
+            /*string[] lines = System.IO.File.ReadAllLines(@"../../components/bit/cONE.v");
             
+            System.Console.WriteLine("Contents of WriteLines2.txt = ");
+            foreach (string line in lines)
+            {
+                // Use a tab to indent each line of the file.
+                Console.WriteLine("\t" + line);
+            }*/
             foreach (DirectoryInfo sub in subdir)
             {
                 Console.WriteLine(sub.Name);
@@ -463,22 +464,39 @@ namespace AppSpace
 
             Pin pinFrom = (Pin)rectFrom.Tag;
             Pin pinTo = (Pin)rectTo.Tag;
-            PolylineTagData data = new PolylineTagData
-            {
-                Id = "w"+ ++wireId
-            };
-            data.Polyline = GenerateLine(line.X1, line.Y1, line.X2, line.Y2, data.Id);
+            PolylineTagData data = new PolylineTagData();
+           
+            string wireName= "e";
+            
             if (pinFrom.Type == Types.IN)
-            {
-                data.RecPinIn = rectTo;
-                data.RecPinOut = rectFrom;                
-            } else
             {
                 data.RecPinIn = rectFrom;
                 data.RecPinOut = rectTo;
-            }            
-            
-            pinFrom.ActiveConnections.Add(data);            
+                if (pinTo.Connected)
+                {
+                    wireName = pinTo.Name_wire;                    
+                }
+            } else
+            {
+                data.RecPinIn = rectTo;
+                data.RecPinOut = rectFrom;                
+                if (pinFrom.Connected)
+                {
+                    wireName = pinFrom.Name_wire;                    
+                }
+            }
+
+            if (string.Equals(wireName, "e"))
+                wireName = "w" + ++wireId;
+
+            data.Id = wireName;
+            data.Polyline = GenerateLine(line.X1, line.Y1, line.X2, line.Y2, wireName, data);
+
+            pinFrom.Connected = true;
+            pinFrom.Name_wire = wireName;
+            pinFrom.ActiveConnections.Add(data);
+            pinTo.Connected = true;
+            pinTo.Name_wire = wireName;
             pinTo.ActiveConnections.Add(data);
 
             canvas.Children.Remove(line);
@@ -530,7 +548,7 @@ namespace AppSpace
             rectFrom = null;
         }
 
-        private Polyline GenerateLine(double startX, double startY, double endX, double endY, string name)
+        private Polyline GenerateLine(double startX, double startY, double endX, double endY, string name, PolylineTagData data)
         {               
             if (startX >= endX)
             {
@@ -539,23 +557,19 @@ namespace AppSpace
                 startY = endY;
                 endX = tmpX;
                 endY = tmpY;
-            }
-            DropShadowEffect effect = new DropShadowEffect {
-                Color = Color.FromRgb(100, 100, 100),
-                Direction = 225,
-                ShadowDepth = 8,
-                BlurRadius = 5,
-                Opacity = 0.3
-            };
+            }            
 
             polyline = new Polyline
             {
                 Stroke = Brushes.Black,
                 StrokeThickness = 2,
-                Effect = effect
+                Effect = GetShadowEffect()
             };
-            // Create a collection of points for a polyline  
-            Point Point1 = new Point(startX, startY);
+            polyline.MouseLeftButtonUp += poly_MouseLeftButtonUp;
+            polyline.MouseEnter += EventMouseOverLine;
+            polyline.MouseLeave += EventMouseLeaveLine;
+           // Create a collection of points for a polyline  
+           Point Point1 = new Point(startX, startY);
             double distance = Math.Abs(startX - endX);
             Point Point3 = new Point(startX + (distance / 2), startY);
             Point Point4 = new Point(startX + (distance / 2), endY);
@@ -571,18 +585,76 @@ namespace AppSpace
 
             Label text = new Label
             {
-                Content = name
+                Content = name,
+                Tag = data
             };
             polyline.Tag = text;
             Canvas.SetLeft(text, startX+10);
             Canvas.SetTop(text, startY-25);
-            // Set Polyline.Points properties  
+              
             polyline.Points = polygonPoints;
-            // Add polyline to the page  
+            
             canvas.Children.Add(polyline);
             canvas.Children.Add(text);
 
             return polyline;
+
+        }
+
+        private void poly_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            string message = "Do you want to delete this connection?";
+            string title = "Delete connection";
+            MessageBoxImage icon = MessageBoxImage.Warning;
+            MessageBoxButton buttons = MessageBoxButton.YesNo;
+            MessageBoxResult result = MessageBox.Show(message, title, buttons, icon);
+            if (result == MessageBoxResult.Yes)
+            {
+                Polyline poly = (Polyline)sender;
+                Label label = (Label)poly.Tag;
+                PolylineTagData data = (PolylineTagData)label.Tag;
+
+                Pin inPin = (Pin)data.RecPinIn.Tag;
+                Pin outPin = (Pin)data.RecPinOut.Tag;
+
+                inPin.ActiveConnections.Remove(data);
+                inPin.Connected = false;
+                inPin.Name_wire = "";
+
+                outPin.ActiveConnections.Remove(data);
+                if (outPin.ActiveConnections.Count == 0)
+                {
+                    outPin.Connected = false;
+                    outPin.Name_wire = "";
+                }
+                canvas.Children.Remove(label);
+                canvas.Children.Remove(poly);
+            }
+            else
+            {
+                return;
+            }
+
+            
+        }
+
+        private void EventMouseOverLine(object sender, MouseEventArgs e)
+        {
+            Polyline poly = (Polyline)sender;
+            poly.StrokeThickness = 4;
+            poly.Stroke = Brushes.Red;
+            if (this.Cursor != Cursors.Wait)
+                Mouse.OverrideCursor = Cursors.Cross;
+
+        }
+
+        private void EventMouseLeaveLine(object sender, MouseEventArgs e)
+        {
+            Polyline poly = (Polyline)sender;
+            poly.StrokeThickness = 2;
+            poly.Stroke = Brushes.Black;
+            if (this.Cursor != Cursors.Wait)
+                Mouse.OverrideCursor = Cursors.Arrow;
 
         }
 
@@ -592,6 +664,18 @@ namespace AppSpace
             double y = Canvas.GetTop(rectangle);
             xOut = x + rectangle.Margin.Left + (rectangle.ActualWidth / 2);
             yOut = y + rectangle.Margin.Top + (rectangle.ActualHeight / 2);
-        }       
+        }
+
+        private static DropShadowEffect GetShadowEffect()
+        {
+            return new DropShadowEffect
+            {
+                Color = Color.FromRgb(100, 100, 100),
+                Direction = 225,
+                ShadowDepth = 8,
+                BlurRadius = 5,
+                Opacity = 0.3
+            };
+        }
     }
 }
