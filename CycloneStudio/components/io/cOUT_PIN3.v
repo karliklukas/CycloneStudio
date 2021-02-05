@@ -1,4 +1,4 @@
-module cOUT_PIN3(input wire OUT, output wire PIN3);
-//hidden: PIN3
-assign PIN3 = OUT;
+module cOUT_PIN3(input wire OUT, output wire OUT_PIN3);
+//hidden: OUT_PIN3
+assign OUT_PIN3 = OUT;
 endmodule

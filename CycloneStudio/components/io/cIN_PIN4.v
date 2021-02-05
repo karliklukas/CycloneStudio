@@ -1,4 +1,4 @@
-module cIN_PIN4(input wire PIN4, output wire IN);
-//hidden: PIN4
-assign IN = PIN4;
+module cIN_PIN4(input wire IN_PIN4, output wire IN);
+//hidden: IN_PIN4
+assign IN = IN_PIN4;
 endmodule

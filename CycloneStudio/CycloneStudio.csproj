@@ -73,7 +73,7 @@
     <Compile Include="structs\Module.cs" />
     <Compile Include="structs\Pin.cs" />
     <Compile Include="structs\PolylineTagData.cs" />
-    <Compile Include="structs\Directory.cs" />
+    <Compile Include="structs\FileControler.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -105,6 +105,55 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="components\bit\cONE.v" />
+    <None Include="components\bit\cZERO.v" />
+    <None Include="components\block\BCD_decoder\cvstup_A.v" />
+    <None Include="components\block\BCD_decoder\cvstup_B.v" />
+    <None Include="components\block\BCD_decoder\cvstup_C.v" />
+    <None Include="components\block\BCD_decoder\cvstup_D.v" />
+    <None Include="components\block\BCD_decoder\cvystup_a.v" />
+    <None Include="components\block\BCD_decoder\cvystup_b.v" />
+    <None Include="components\block\BCD_decoder\cvystup_c.v" />
+    <None Include="components\block\BCD_decoder\cvystup_d.v" />
+    <None Include="components\block\BCD_decoder\cvystup_e.v" />
+    <None Include="components\block\BCD_decoder\cvystup_f.v" />
+    <None Include="components\block\BCD_decoder\cvystup_g.v" />
+    <None Include="components\io\cIN_PIN.v" />
+    <None Include="components\io\cIN_PIN1.v" />
+    <None Include="components\io\cIN_PIN10.v" />
+    <None Include="components\io\cIN_PIN2.v" />
+    <None Include="components\io\cIN_PIN3.v" />
+    <None Include="components\io\cIN_PIN4.v" />
+    <None Include="components\io\cIN_PIN5.v" />
+    <None Include="components\io\cIN_PIN6.v" />
+    <None Include="components\io\cIN_PIN7.v" />
+    <None Include="components\io\cIN_PIN8.v" />
+    <None Include="components\io\cIN_PIN9.v" />
+    <None Include="components\io\cOUT_PIN.v" />
+    <None Include="components\io\cOUT_PIN1.v" />
+    <None Include="components\io\cOUT_PIN10.v" />
+    <None Include="components\io\cOUT_PIN2.v" />
+    <None Include="components\io\cOUT_PIN3.v" />
+    <None Include="components\io\cOUT_PIN4.v" />
+    <None Include="components\io\cOUT_PIN5.v" />
+    <None Include="components\io\cOUT_PIN6.v" />
+    <None Include="components\io\cOUT_PIN7.v" />
+    <None Include="components\io\cOUT_PIN8.v" />
+    <None Include="components\io\cOUT_PIN9.v" />
+    <None Include="components\logic\cAND2.v" />
+    <None Include="components\logic\cAND3.v" />
+    <None Include="components\logic\cAND4.v" />
+    <None Include="components\logic\cNAND2.v" />
+    <None Include="components\logic\cNAND3.v" />
+    <None Include="components\logic\cNAND4.v" />
+    <None Include="components\logic\cNOR2.v" />
+    <None Include="components\logic\cNOR3.v" />
+    <None Include="components\logic\cNOR4.v" />
+    <None Include="components\logic\cOR2.v" />
+    <None Include="components\logic\cOR3.v" />
+    <None Include="components\logic\cOR4.v" />
+    <None Include="components\logic\cXNOR2.v" />
+    <None Include="components\logic\cXOR2.v" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -114,7 +163,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="graphics\" />
+    <Folder Include="components\comb\" />
+    <Folder Include="components\kits\DE0-Nano\" />
+    <Folder Include="components\kits\StormIV-E6\" />
+    <Folder Include="components\sec\" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
@@ -127,6 +179,9 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <SplashScreen Include="graphics\splash.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

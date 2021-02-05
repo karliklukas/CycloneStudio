@@ -29,8 +29,7 @@ namespace AppSpace
         private int moduleId;
         private int wireId;
 
-        private Line line = new Line();
-        Polyline polyline;            
+        private Line line = new Line();                   
         private Rectangle rectFrom, rectTo;
 
         private List<Rectangle> modules;
@@ -274,11 +273,17 @@ namespace AppSpace
             
             Rectangle el = (Rectangle)sender;
             rectFrom = el;
-            _isLineDrag = true;           
-
             Pin pinInfo = (Pin)el.Tag;
             Types startPinType = pinInfo.Type;
+
+            if (startPinType == Types.IN && pinInfo.Connected)
+            {               
+                return;
+            }
+
+            _isLineDrag = true;  
             deactivated.Clear();
+
             foreach (Rectangle r in modules)
             {
                 Module m = (Module)r.Tag;
@@ -417,35 +422,18 @@ namespace AppSpace
 
         private void generateMenuItems()
         {
-            DirectoryInfo d = new DirectoryInfo(@"../../components");
+            FileControler.GenerateMenuItems(mmMenu);
+           /* DirectoryInfo d = new DirectoryInfo(@"../../components");
             DirectoryInfo[] subdir = d.GetDirectories();
-            /*string[] lines = System.IO.File.ReadAllLines(@"../../components/bit/cONE.v");
+            string[] lines = System.IO.File.ReadAllLines(@"../../components/bit/cONE.v");
             
             System.Console.WriteLine("Contents of WriteLines2.txt = ");
             foreach (string line in lines)
             {
                 // Use a tab to indent each line of the file.
                 Console.WriteLine("\t" + line);
+            }           
             }*/
-            foreach (DirectoryInfo sub in subdir)
-            {
-                Console.WriteLine(sub.Name);
-                //Add to menu
-                MenuItem newMenuItem = new MenuItem();
-                newMenuItem.Header = sub.Name;
-                this.mmMenu.Items.Add(newMenuItem);
-
-                FileInfo[] Files = sub.GetFiles("*.v");
-                foreach (FileInfo file in Files)
-                {
-                    MenuItem newSubMenuItem = new MenuItem();   
-                    string name = file.Name.Remove(0, 1);
-                    name = name.Remove(name.Length -2);
-                    newSubMenuItem.Header = name;
-                    newMenuItem.Items.Add(newSubMenuItem);
-                    
-                }
-            }
         }
 
         private void ved_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -502,8 +490,7 @@ namespace AppSpace
             canvas.Children.Remove(line);
             line = null;
             rectFrom = null;
-            rectTo = null;
-            Console.WriteLine("asd");
+            rectTo = null;            
         }
 
         private void ChangePinHitVisibility(bool change)
@@ -538,18 +525,16 @@ namespace AppSpace
         {            
             if (!_isLineDrag) return;
             if (!canvas.IsMouseDirectlyOver) return;
-            //clickCount++;
-            //if (clickCount < 3) return;
+            
             _isLineDrag = false;
             canvas.Children.Remove(line);
             ChangePinHitVisibility(true);
-            line = null;
-            polyline = null;
+            line = null;            
             rectFrom = null;
         }
 
         private Polyline GenerateLine(double startX, double startY, double endX, double endY, string name, PolylineTagData data)
-        {               
+        {
             if (startX >= endX)
             {
                 double tmpX = startX, tmpY = startY;
@@ -557,9 +542,9 @@ namespace AppSpace
                 startY = endY;
                 endX = tmpX;
                 endY = tmpY;
-            }            
+            }
 
-            polyline = new Polyline
+            Polyline polyline = new Polyline
             {
                 Stroke = Brushes.Black,
                 StrokeThickness = 2,
@@ -568,8 +553,8 @@ namespace AppSpace
             polyline.MouseLeftButtonUp += poly_MouseLeftButtonUp;
             polyline.MouseEnter += EventMouseOverLine;
             polyline.MouseLeave += EventMouseLeaveLine;
-           // Create a collection of points for a polyline  
-           Point Point1 = new Point(startX, startY);
+            // Create a collection of points for a polyline  
+            Point Point1 = new Point(startX, startY);
             double distance = Math.Abs(startX - endX);
             Point Point3 = new Point(startX + (distance / 2), startY);
             Point Point4 = new Point(startX + (distance / 2), endY);
@@ -589,11 +574,11 @@ namespace AppSpace
                 Tag = data
             };
             polyline.Tag = text;
-            Canvas.SetLeft(text, startX+10);
-            Canvas.SetTop(text, startY-25);
-              
+            Canvas.SetLeft(text, startX + 10);
+            Canvas.SetTop(text, startY - 25);
+
             polyline.Points = polygonPoints;
-            
+
             canvas.Children.Add(polyline);
             canvas.Children.Add(text);
 
