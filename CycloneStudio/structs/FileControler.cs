@@ -60,11 +60,45 @@ namespace AppSpace.structs
             foreach (FileInfo file in Files)
             {
                 MenuItem newSubMenuItem = new MenuItem();
-                string name = file.Name.Remove(0, 1);
-                name = name.Remove(name.Length - 2);
-                newSubMenuItem.Header = name;
+                newSubMenuItem.Header = TrimModuleName(file);
                 newMenuItem.Items.Add(newSubMenuItem);
+
+                MenuData data = ReadAndProcessFile(file.FullName);
+                newSubMenuItem.Tag = data;
             }
+        }
+
+        private static MenuData ReadAndProcessFile(string path)
+        {
+            MenuData data = new MenuData();//
+            string text = File.ReadAllText(path);
+            string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\n\\s(]+)\\);");
+            data.Name = textSplited[1];
+            data.FilePath = path;
+            
+
+            string[] pins = Regex.Replace(textSplited[2], @"\s+", "").Split(',');
+            
+            for (int i = 0; i < pins.Length; i++)
+            {
+                if (pins[i].Contains("outputwire"))
+                {
+                    data.OutPins.Add(pins[i].Remove(0,10));
+                    //Console.WriteLine("out "+pins[i].Remove(0, 10));
+                } else if (pins[i].Contains("inputwire"))
+                {
+                    data.InPins.Add(pins[i].Remove(0, 9));
+                    //Console.WriteLine("in " + pins[i].Remove(0, 9));
+                }
+            }
+
+            string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d,\\s]+)assign");
+            if (textSplitedTwo.Length >1)
+            {
+                string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
+                data.HiddenPins = new List<string>(result);                
+            }            
+            return data;
         }
 
         private static void GenerateSubItems(DirectoryInfo sub, MenuItem newMenuItem)
@@ -85,41 +119,42 @@ namespace AppSpace.structs
 
             foreach (FileInfo file in Files)
             {
-                string name = file.Name.Remove(0, 1);
-                name = name.Remove(name.Length - 2);
+                MenuData data = ReadAndProcessFile(file.FullName);
+                string name = TrimModuleName(file);
+                MenuItem newSubMenuItem = new MenuItem();
+                newSubMenuItem.Header = name;
+                newSubMenuItem.Tag = data;
+
                 if (Regex.IsMatch(name, "^AND\\d"))
                 {
-                    MenuItem newSubMenuItem = new MenuItem();
-                    newSubMenuItem.Header = name;
                     andItems.Items.Add(newSubMenuItem);
                 }
                 else if (Regex.IsMatch(name, "^NAND\\d"))
                 {
-                    MenuItem newSubMenuItem = new MenuItem();
-                    newSubMenuItem.Header = name;
                     nandItems.Items.Add(newSubMenuItem);
                 }
                 else if (Regex.IsMatch(name, "^OR\\d"))
                 {
-                    MenuItem newSubMenuItem = new MenuItem();
-                    newSubMenuItem.Header = name;
                     orItems.Items.Add(newSubMenuItem);
                 }
                 else if (Regex.IsMatch(name, "^NOR\\d"))
                 {
-                    MenuItem newSubMenuItem = new MenuItem();
-                    newSubMenuItem.Header = name;
                     norItems.Items.Add(newSubMenuItem);
                 }
                 else
                 {
-                    MenuItem newSubMenuItem = new MenuItem();                
-                    newSubMenuItem.Header = name;
                     newMenuItem.Items.Add(newSubMenuItem);
                 }
-                
+
 
             }
+        }
+
+        private static string TrimModuleName(FileInfo file)
+        {
+            string name = file.Name.Remove(0, 1);
+            name = name.Remove(name.Length - 2);
+            return name;
         }
     }
 }

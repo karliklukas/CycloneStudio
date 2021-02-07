@@ -70,6 +70,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="structs\MenuData.cs" />
     <Compile Include="structs\Module.cs" />
     <Compile Include="structs\Pin.cs" />
     <Compile Include="structs\PolylineTagData.cs" />
