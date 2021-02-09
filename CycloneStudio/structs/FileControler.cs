@@ -6,30 +6,33 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Windows.Controls;
 using System.Text.RegularExpressions;
+using System.Windows;
+using System.Windows.Shapes;
+using System.Windows.Media;
 
 namespace AppSpace.structs
 {
     class FileControler
     {
-        public FileControler() {
+        private readonly RoutedEventHandler eventHandler;
 
-        }        
+        public FileControler(RoutedEventHandler eventHandler) => this.eventHandler = eventHandler;
 
-        public static void GenerateMenuItems(Menu mmMenu)
+        public void GenerateMenuItems(Menu menu)
         {
             DirectoryInfo d = new DirectoryInfo(@"../../components");
             DirectoryInfo[] subdir = d.GetDirectories();
 
-            ReadAndGenerateItems(mmMenu, subdir);
+            ReadAndGenerateItems(menu, subdir);
         }
 
-        private static void ReadAndGenerateItems(Menu mmMenu, DirectoryInfo[] subdir)
+        private void ReadAndGenerateItems(Menu menu, DirectoryInfo[] subdir)
         {
             foreach (DirectoryInfo sub in subdir)
             {   
                 MenuItem newMenuItem = new MenuItem();
                 newMenuItem.Header = sub.Name;
-                mmMenu.Items.Add(newMenuItem);
+                menu.Items.Add(newMenuItem);
 
                 DirectoryInfo[] innerDir = sub.GetDirectories();
                 if (innerDir.Length != 0)
@@ -54,7 +57,7 @@ namespace AppSpace.structs
             }
         }
 
-        private static void GenerateItems(DirectoryInfo sub, MenuItem newMenuItem)
+        private void GenerateItems(DirectoryInfo sub, MenuItem newMenuItem)
         {
             FileInfo[] Files = sub.GetFiles("*.v");
             foreach (FileInfo file in Files)
@@ -62,13 +65,14 @@ namespace AppSpace.structs
                 MenuItem newSubMenuItem = new MenuItem();
                 newSubMenuItem.Header = TrimModuleName(file);
                 newMenuItem.Items.Add(newSubMenuItem);
+                newSubMenuItem.Click += eventHandler;
 
                 MenuData data = ReadAndProcessFile(file.FullName);
                 newSubMenuItem.Tag = data;
             }
         }
 
-        private static MenuData ReadAndProcessFile(string path)
+        private MenuData ReadAndProcessFile(string path)
         {
             MenuData data = new MenuData();//
             string text = File.ReadAllText(path);
@@ -101,7 +105,7 @@ namespace AppSpace.structs
             return data;
         }
 
-        private static void GenerateSubItems(DirectoryInfo sub, MenuItem newMenuItem)
+        private void GenerateSubItems(DirectoryInfo sub, MenuItem newMenuItem)
         {
             FileInfo[] Files = sub.GetFiles("*.v");
             MenuItem andItems = new MenuItem();
@@ -124,6 +128,7 @@ namespace AppSpace.structs
                 MenuItem newSubMenuItem = new MenuItem();
                 newSubMenuItem.Header = name;
                 newSubMenuItem.Tag = data;
+                newSubMenuItem.Click += eventHandler;
 
                 if (Regex.IsMatch(name, "^AND\\d"))
                 {
@@ -150,11 +155,12 @@ namespace AppSpace.structs
             }
         }
 
-        private static string TrimModuleName(FileInfo file)
+        private string TrimModuleName(FileInfo file)
         {
             string name = file.Name.Remove(0, 1);
             name = name.Remove(name.Length - 2);
             return name;
         }
+        
     }
 }

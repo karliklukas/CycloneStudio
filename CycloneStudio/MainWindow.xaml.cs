@@ -25,9 +25,10 @@ namespace AppSpace
     {
         private bool _isRectDragInProg = false;
         private bool _isLineDrag = false;
-        private bool _isLineDragDone = false;        
+        private bool _isLineDragDone = false;
         private int moduleId;
         private int wireId;
+        private Double zoom = 1;
 
         private Line line = new Line();                   
         private Rectangle rectFrom, rectTo;
@@ -35,11 +36,16 @@ namespace AppSpace
         private List<Rectangle> modules;
         private List<Rectangle> deactivated;
 
+        private FileControler fileControler;
+
 
 
         public MainWindow()
         {
             InitializeComponent();
+
+            fileControler = new FileControler(new RoutedEventHandler(menuItemGenerateModule));
+
             generateMenuItems();            
             moduleId = 0;
             wireId = 0;
@@ -47,12 +53,9 @@ namespace AppSpace
             modules = new List<Rectangle>();
             deactivated = new List<Rectangle>();
 
-            /*//Add to main menu
-            MenuItem newMenuItem1 = new MenuItem();
-            newMenuItem1.Header = "Test 123";
-            this.mmMenu.Items.Add(newMenuItem1);*/
-
-            //Add to a sub item
+            canvas.MouseMove += canvas_MouseMove;
+            canvas.MouseLeftButtonUp += canvas_MouseUp;
+            
             MenuItem newMenuItem2 = new MenuItem();
             MenuItem newExistMenuItem = (MenuItem)this.mmMenu.Items[0];
 
@@ -62,151 +65,6 @@ namespace AppSpace
             
             newMenuItem3.Click += new RoutedEventHandler(menuItemClick);
         }
-
-        
-
-
-        private void GenerujBlok()
-        {
-
-            Label popis = new Label
-            {
-                Height = 100 * 2,
-                Width = 100 * 2,
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-                VerticalContentAlignment = VerticalAlignment.Center,
-                Content = "text",
-                Margin = new Thickness(50, 50, 0, 0),
-                Foreground = Brushes.Red,
-                FontWeight = FontWeights.Bold,
-                IsHitTestVisible = false
-            };
-            Rectangle vedHorni = new Rectangle
-            {
-                Margin = new Thickness(10, 30, 0, 0),
-                Width = 10 * 2,
-                Height = 10 * 2,
-                Fill = Brushes.Green,
-                Stroke = Brushes.Gray,
-                StrokeThickness = 0
-            };
-            Rectangle vedDolni = new Rectangle
-            {
-                Margin = new Thickness(110, 80, 0, 0),
-                Width = 10 * 2,
-                Height = 10 * 2,
-                Fill = Brushes.Yellow,
-                Stroke = Brushes.OrangeRed,
-                StrokeThickness = 0
-            };
-
-            Pin inpin1 = new Pin
-            {
-                Connected = false,
-                Hidden = false,
-                Name = "A",
-                Type = Types.IN,
-                Rectangle = vedHorni
-            };
-
-            Pin outpin1 = new Pin
-            {
-                Connected = false,
-                Hidden = false,
-                Name = "B",
-                Type = Types.OUT,
-                Rectangle = vedDolni
-            };
-
-
-            Module module = new Module
-            {
-                Name = "Mod " + (++moduleId)
-            };
-            module.InPins.Add(inpin1);
-            module.OutPins.Add(outpin1);            
-
-            Rectangle g = new Rectangle
-            {
-                Margin = new Thickness(0, 0, 0, 0),
-                Width = 50 * 2,
-                Height = 50 * 2,
-                RadiusX = 5,
-                RadiusY = 5,
-                Fill = Brushes.Black,
-                Stroke = Brushes.Gray,
-                StrokeThickness = 0,
-                Tag = module,
-                Effect = GetShadowEffect()
-
-        };
-            Grid hlavni = new Grid
-            {
-                Margin = new Thickness(20, 20, 0, 0),
-                Width = 50 * 2,
-                Height = 50 * 2,
-                Background = Brushes.Transparent,
-                Tag = g,
-                Effect = GetShadowEffect()
-            };
-
-
-
-            TextBlock someText = new TextBlock();
-            someText.Text = module.Name;
-            someText.Foreground = Brushes.White;
-            FontSizeConverter fSizeConverter = new FontSizeConverter();
-            someText.FontSize = (double)fSizeConverter.ConvertFromString("7pt");
-            someText.Margin = new Thickness(25, 5, 0, 0);
-
-            TextBlock someText1 = new TextBlock();
-            someText1.Text = "Cau cau";
-            someText1.Foreground = Brushes.White;
-            FontSizeConverter fSizeConverter1 = new FontSizeConverter();
-            someText1.FontSize = (double)fSizeConverter1.ConvertFromString("7pt");
-            someText1.Margin = new Thickness(5, 70, 0, 0);
-
-            hlavni.Children.Add(g);
-            hlavni.Children.Add(someText);
-            hlavni.Children.Add(someText1);
-
-            Canvas.SetLeft(hlavni, 0);
-            Canvas.SetTop(hlavni, 0);
-            Canvas.SetLeft(vedDolni, 0);
-            Canvas.SetTop(vedDolni, 0);
-            Canvas.SetTop(vedHorni, 0);
-            Canvas.SetLeft(vedHorni, 0);
-
-
-            Panel.SetZIndex(hlavni, 1);
-            Panel.SetZIndex(vedHorni, 1);
-            Panel.SetZIndex(vedDolni, 1);
-
-            hlavni.MouseEnter += EventMouseOverGrid;
-            hlavni.MouseLeave += EventMouseLeaveGrid;
-            hlavni.MouseLeftButtonDown += rect_MouseLeftButtonDown;
-            hlavni.MouseLeftButtonUp += rect_MouseLeftButtonUp;
-            hlavni.MouseMove += rect_MouseMove;
-
-            SetPinEvents(vedDolni);
-            SetPinEvents(vedHorni);
-
-            vedHorni.Tag = inpin1;// new List<PolylineTagData>();
-            vedDolni.Tag = outpin1;// new List<PolylineTagData>();
-
-            canvas.Children.Add(hlavni);
-            canvas.Children.Add(vedHorni);
-            canvas.Children.Add(vedDolni);
-            //canvas.Children.Add(popis);
-
-            canvas.MouseMove += canvas_MouseMove;
-            canvas.MouseLeftButtonUp += canvas_MouseUp;
-
-            modules.Add(g);
-
-        }
-
-        
 
         private void SetPinEvents(Rectangle rec)
         {
@@ -219,14 +77,23 @@ namespace AppSpace
         private void rect_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (_isLineDrag) return;
+
             Grid el = (Grid)sender;
             Rectangle rec = (Rectangle)el.Tag;
             _isRectDragInProg = true;
-           
-            Module pol = (Module)rec.Tag;
-            Panel.SetZIndex(el, 100);
-            Panel.SetZIndex(pol.InPins[0].Rectangle, 101);
-            Panel.SetZIndex(pol.OutPins[0].Rectangle, 102);           
+
+            int counter = 100;
+            Module module = (Module)rec.Tag;
+            Panel.SetZIndex(el, counter++);
+
+            foreach(Pin pin in module.InPins)
+            {
+                Panel.SetZIndex(pin.Rectangle, counter++);
+            }
+            foreach (Pin pin in module.OutPins)
+            {
+                Panel.SetZIndex(pin.Rectangle, counter++);
+            }                     
         }
 
         private void rect_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -237,12 +104,40 @@ namespace AppSpace
             Rectangle rec = (Rectangle)el.Tag;
             _isRectDragInProg = false;
 
-            Module module = (Module)rec.Tag;
+            Module module = (Module)rec.Tag;            
             Panel.SetZIndex(el, 1);
-            Panel.SetZIndex(module.InPins[0].Rectangle, 1);
-            Panel.SetZIndex(module.OutPins[0].Rectangle, 1);
+
+            foreach (Pin pin in module.InPins)
+            {
+                Panel.SetZIndex(pin.Rectangle, 1);
+            }
+            foreach (Pin pin in module.OutPins)
+            {
+                Panel.SetZIndex(pin.Rectangle, 1);
+            }
+
             PinsRestoreLines(module.InPins);
             PinsRestoreLines(module.OutPins);
+        }
+
+        private void rect_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isRectDragInProg) return;
+            Grid el = (Grid)sender;
+            Rectangle rec = (Rectangle)el.Tag;
+            // get the position of the mouse relative to the Canvas
+            var mousePos = e.GetPosition(canvas);
+
+            // center the rect on the mouse
+            double left = mousePos.X - (el.ActualWidth / 2) - 20;
+            double top = mousePos.Y - (el.ActualHeight / 2) - 20;
+            Canvas.SetLeft(el, left);
+            Canvas.SetTop(el, top);
+
+            Module module = (Module)rec.Tag;
+
+            MovePinsOnMouseMove(left, top, module.InPins);
+            MovePinsOnMouseMove(left, top, module.OutPins);
         }
 
         private void PinsRestoreLines(List<Pin> data)
@@ -335,26 +230,6 @@ namespace AppSpace
             Panel.SetZIndex(line, 100);            
         }
 
-        private void rect_MouseMove(object sender, MouseEventArgs e)
-        {           
-            if (!_isRectDragInProg) return;
-            Grid el = (Grid)sender;
-            Rectangle rec = (Rectangle)el.Tag;
-            // get the position of the mouse relative to the Canvas
-            var mousePos = e.GetPosition(canvas);
-
-            // center the rect on the mouse
-            double left = mousePos.X - (el.ActualWidth / 2);
-            double top = mousePos.Y - (el.ActualHeight / 2);
-            Canvas.SetLeft(el, left);
-            Canvas.SetTop(el, top);
-
-            Module module = (Module)rec.Tag;
-
-            MovePinsOnMouseMove(left, top, module.InPins);
-            MovePinsOnMouseMove(left, top, module.OutPins);
-        }
-
         private void MovePinsOnMouseMove(double left, double top, List<Pin> data)
         {
             foreach (Pin p in data)
@@ -417,23 +292,140 @@ namespace AppSpace
 
         private void menuItemClick(object sender, RoutedEventArgs e)
         {
-            GenerujBlok();
+            Console.WriteLine("jop");
         }
 
         private void generateMenuItems()
         {
-            FileControler.GenerateMenuItems(mmMenu);
-           /* DirectoryInfo d = new DirectoryInfo(@"../../components");
-            DirectoryInfo[] subdir = d.GetDirectories();
-            string[] lines = System.IO.File.ReadAllLines(@"../../components/bit/cONE.v");
-            
-            System.Console.WriteLine("Contents of WriteLines2.txt = ");
-            foreach (string line in lines)
+            fileControler.GenerateMenuItems(mmMenu);           
+        }
+
+        private void menuItemGenerateModule(object sender, RoutedEventArgs e)
+        {
+            MenuItem el = sender as MenuItem;
+            MenuData data = el.Tag as MenuData;           
+
+            IEnumerable<string> inPins = data.InPins.Except(data.HiddenPins);
+            IEnumerable<string> outPins = data.OutPins.Except(data.HiddenPins);
+
+            int pinsCount = Math.Max(inPins.Count(), outPins.Count());
+            CreateModule(data, out Module module, out Grid hlavni, 10 + pinsCount * 30);
+
+            int topMargin = 30;
+            int leftInMargin = 10, leftOutMargin = 130;
+            int count = 0;
+
+            foreach (string pin in inPins)
             {
-                // Use a tab to indent each line of the file.
-                Console.WriteLine("\t" + line);
-            }           
-            }*/
+                Pin inpin1 = CreatePin(leftInMargin, topMargin + topMargin * count, Types.IN, pin);
+                hlavni.Children.Add(CreateTextBlock(15, 15 + topMargin * (count++), pin));
+                module.InPins.Add(inpin1);
+            }
+
+            count = 0;
+            foreach (string pin in outPins)
+            {
+                Pin outpin1 = CreatePin(leftOutMargin, topMargin + topMargin * count, Types.OUT, pin);
+                hlavni.Children.Add(CreateTextBlock(90, 15 + topMargin * (count++), pin));
+                module.OutPins.Add(outpin1);
+            }
+
+            hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
+            hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));            
+
+            
+        }
+
+        private static TextBlock CreateTextBlock(int marginLeft, int marginTop, string text)
+        {
+            TextBlock someText = new TextBlock();
+            someText.Text = text;
+            someText.Foreground = Brushes.White;
+            someText.FontSize = 9;
+            someText.Margin = new Thickness(marginLeft, marginTop, 0, 0);
+            return someText;
+        }
+
+        private void CreateModule(MenuData data, out Module module, out Grid hlavni, int height)
+        {
+            module = new Module
+            {
+                Id = "b" + (++moduleId),
+                Name = data.Name,
+                Path = data.FilePath
+            };
+            Rectangle g = new Rectangle
+            {
+                Margin = new Thickness(0, 0, 0, 0),
+                Width = 120,
+                Height = height,
+                RadiusX = 5,
+                RadiusY = 5,
+                Fill = GetLinearGradientFill(),
+                Stroke = Brushes.Red,
+                StrokeThickness = 0,
+                Tag = module,
+                Effect = GetShadowEffect()
+
+            };
+            hlavni = new Grid
+            {
+                Margin = new Thickness(20, 20, 0, 0),
+                Width = 120,
+                Height = height,
+                Background = Brushes.Transparent,
+                Tag = g,
+                Effect = GetShadowEffect()
+            };
+            Canvas.SetLeft(hlavni, 0);
+            Canvas.SetTop(hlavni, 0);
+
+            /*Panel.SetZIndex(hlavni, 1);
+            Panel.SetZIndex(vedHorni, 1);
+            Panel.SetZIndex(vedDolni, 1);*/
+            hlavni.Children.Add(g);
+            modules.Add(g);
+
+            hlavni.MouseEnter += EventMouseOverGrid;
+            hlavni.MouseLeave += EventMouseLeaveGrid;
+            hlavni.MouseLeftButtonDown += rect_MouseLeftButtonDown;
+            hlavni.MouseLeftButtonUp += rect_MouseLeftButtonUp;
+            hlavni.MouseMove += rect_MouseMove;
+
+            canvas.Children.Add(hlavni);
+        }
+
+        private Pin CreatePin(int MarginLeft, int MarginTop, Types pinType, string name)
+        {
+            Rectangle rectangle = new Rectangle
+            {
+                Margin = new Thickness(MarginLeft, MarginTop, 0, 0),
+                Width = 20,
+                Height = 20,
+                RadiusX = 2,
+                RadiusY = 2,
+                Fill = pinType == Types.OUT ? GetLinearGradientFillPinOut() : GetLinearGradientFillPinIn(),
+                Stroke = Brushes.OrangeRed,
+                StrokeThickness = 0,
+                Effect = pinType == Types.IN ? GetShadowEffect() : null
+            };
+
+            Pin pin = new Pin
+            {
+                Connected = false,
+                Hidden = false,
+                Name = name,
+                Type = pinType,
+                Rectangle = rectangle
+            };
+
+            Canvas.SetTop(rectangle, 0);
+            Canvas.SetLeft(rectangle, 0);
+            SetPinEvents(rectangle);
+            rectangle.Tag = pin;
+            canvas.Children.Add(rectangle);
+
+            return pin;
         }
 
         private void ved_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -626,6 +618,10 @@ namespace AppSpace
         private void EventMouseOverLine(object sender, MouseEventArgs e)
         {
             Polyline poly = (Polyline)sender;
+            if (!poly.IsHitTestVisible)
+            {
+                return;
+            }
             poly.StrokeThickness = 4;
             poly.Stroke = Brushes.Red;
             if (this.Cursor != Cursors.Wait)
@@ -661,6 +657,68 @@ namespace AppSpace
                 BlurRadius = 5,
                 Opacity = 0.3
             };
+        }        
+
+        private static LinearGradientBrush GetLinearGradientFill()
+        {
+            LinearGradientBrush myVerticalGradient = new LinearGradientBrush();
+            myVerticalGradient.StartPoint = new Point(0.5, 0);
+            myVerticalGradient.EndPoint = new Point(0.5, 1);
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 170, 255), 0.0));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 170, 255), 0.2));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 100, 255), 1.0));
+            return myVerticalGradient;
         }
+
+        private static LinearGradientBrush GetLinearGradientFillPinIn()
+        {
+            LinearGradientBrush myVerticalGradient = new LinearGradientBrush();
+            myVerticalGradient.StartPoint = new Point(0, 0.5);
+            myVerticalGradient.EndPoint = new Point(1, 0.5);
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 186, 50), 0.0));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 186, 50), 0.2));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 131, 35), 1.0));
+            return myVerticalGradient;
+        }
+
+        private static LinearGradientBrush GetLinearGradientFillPinOut()
+        {
+            LinearGradientBrush myVerticalGradient = new LinearGradientBrush();
+            myVerticalGradient.StartPoint = new Point(1, 0.5);
+            myVerticalGradient.EndPoint = new Point(0, 0.5);
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(199, 199, 23), 0.0));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(199, 199, 23), 0.2));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(179, 179, 24), 1.0));
+            return myVerticalGradient;
+        }
+
+        // Zoom on Mouse wheel
+        private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers != ModifierKeys.Control)
+                return;
+
+            double zoomMax = 2;
+            double zoomMin = 0.9999;
+            double zoomSpeed = 0.001;
+            
+
+            zoom += zoomSpeed * e.Delta; // Ajust zooming speed (e.Delta = Mouse spin value )
+            if (zoom < zoomMin) { zoom = zoomMin; } // Limit Min Scale
+            if (zoom > zoomMax) { zoom = zoomMax; } // Limit Max Scale
+
+            Point mousePos = e.GetPosition(canvas);
+
+            if (zoom > 1)
+            {
+                canvas.LayoutTransform = new ScaleTransform(zoom, zoom, mousePos.X, mousePos.Y); // transform Canvas size from mouse position
+            }
+            else
+            {                
+                canvas.LayoutTransform = new ScaleTransform(zoom, zoom); // transform Canvas size
+            }
+            e.Handled = true;
+        }
+
     }
 }

@@ -18,6 +18,7 @@ namespace AppSpace.structs
         {
             inPins = new List<string>();
             outPins = new List<string>();
+            hiddenPins = new List<string>();
         }
 
         public string FilePath { get => filePath; set => filePath = value; }

@@ -184,5 +184,8 @@
   <ItemGroup>
     <SplashScreen Include="graphics\splash.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="graphics\icon.ico" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -5,14 +5,30 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AppSpace"        
         mc:Ignorable="d"
-        Title="Cyclone Studio v0.01" Height="550" Width="1000">
+        Icon="./graphics/icon.ico"
+        Title="Cyclone Studio v0.05" Height="550" Width="1000">
     <Grid>
         <ScrollViewer Grid.ColumnSpan="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,30,0,0">
-            <Canvas x:Name="canvas" Height="980" Width="1920" Background="#FFE6E6E6"/>
+            <Canvas x:Name="canvas" Height="980" Width="1920" MouseWheel="Canvas_MouseWheel">
+                <Canvas.Background>
+                    <DrawingBrush TileMode="Tile" Viewport="-1,-1,20,20" ViewportUnits="Absolute">
+                        <DrawingBrush.Drawing>
+                            <GeometryDrawing Brush="#FFE6E6E6">
+                                <GeometryDrawing.Geometry>
+                                    <RectangleGeometry Rect="0,0,80,80"/>
+                                </GeometryDrawing.Geometry>
+                                <GeometryDrawing.Pen>
+                                    <Pen Brush="Gray" Thickness="1"/>
+                                </GeometryDrawing.Pen>                                
+                            </GeometryDrawing>
+                        </DrawingBrush.Drawing>
+                    </DrawingBrush>
+                </Canvas.Background>
+            </Canvas>
         </ScrollViewer>
 
         <Menu x:Name="mmMenu" Height="30" VerticalAlignment="Top" Background="#FFC5C5C5" FontSize="14">
-            <MenuItem Background="Red" Header="lkjkl" Height="30" Width="60"/>
+            <MenuItem Background="Red" Header="Gen" Height="30" Width="60"/>
         </Menu>
     </Grid>
 </Window>

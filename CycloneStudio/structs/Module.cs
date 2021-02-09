@@ -9,12 +9,14 @@ namespace AppSpace.structs
     class Module
     {
         private string name;
-        private int id;
+        private string id;
+        private string path;
         private List<Pin> inPins;
         private List<Pin> outPins;
 
         public string Name { get => name; set => name = value; }
-        public int Id { get => id; set => id = value; }
+        public string Id { get => id; set => id = value; }
+        public string Path { get => path; set => path = value; }
         public List<Pin> InPins { get => inPins; set => inPins = value; }
         public List<Pin> OutPins { get => outPins; set => outPins = value; }
 
