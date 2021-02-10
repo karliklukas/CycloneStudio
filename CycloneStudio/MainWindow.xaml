@@ -7,13 +7,25 @@
         mc:Ignorable="d"
         Icon="./graphics/icon.ico"
         Title="Cyclone Studio v0.05" Height="550" Width="1000">
+    <Window.Resources>
+        <LinearGradientBrush x:Key="NormalBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientBrush.GradientStops>
+                <GradientStopCollection>
+                    <GradientStop Color="#AAA" Offset="0.0"/>
+                    <GradientStop Color="#FFF" Offset="0.95"/>
+                    <GradientStop Color="#0064ff" Offset="1.0"/>
+                </GradientStopCollection>
+            </GradientBrush.GradientStops>
+        </LinearGradientBrush>
+    </Window.Resources>
+    
     <Grid>
         <ScrollViewer Grid.ColumnSpan="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,30,0,0">
             <Canvas x:Name="canvas" Height="980" Width="1920" MouseWheel="Canvas_MouseWheel">
                 <Canvas.Background>
                     <DrawingBrush TileMode="Tile" Viewport="-1,-1,20,20" ViewportUnits="Absolute">
                         <DrawingBrush.Drawing>
-                            <GeometryDrawing Brush="#FFE6E6E6">
+                            <GeometryDrawing Brush="#AAE6E6E6">
                                 <GeometryDrawing.Geometry>
                                     <RectangleGeometry Rect="0,0,80,80"/>
                                 </GeometryDrawing.Geometry>
@@ -27,8 +39,16 @@
             </Canvas>
         </ScrollViewer>
 
-        <Menu x:Name="mmMenu" Height="30" VerticalAlignment="Top" Background="#FFC5C5C5" FontSize="14">
-            <MenuItem Background="Red" Header="Gen" Height="30" Width="60"/>
+        <Menu x:Name="mmMenu" Height="30" VerticalAlignment="Top"  FontSize="15" Background="{StaticResource NormalBrush}">
+            <MenuItem Header="File" Height="30" Width="40">
+                <MenuItem Header="Open project" Click="Event_OpenProject" />
+                <MenuItem Header="New project" Click="Event_NewProject" />
+                <MenuItem Header="Open block" Click="Event_OpenBlock" />
+                <MenuItem Header="New block" Click="Event_NewBlock"/>
+            </MenuItem>
+            <MenuItem Header="Build" Height="30" Width="50" Click="Event_Build"/>
+            <MenuItem Header="Upload" Height="30" Width="60" Click="Event_Upload"/>
         </Menu>
     </Grid>
 </Window>
+    

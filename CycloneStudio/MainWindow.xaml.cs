@@ -56,14 +56,14 @@ namespace AppSpace
             canvas.MouseMove += canvas_MouseMove;
             canvas.MouseLeftButtonUp += canvas_MouseUp;
             
-            MenuItem newMenuItem2 = new MenuItem();
-            MenuItem newExistMenuItem = (MenuItem)this.mmMenu.Items[0];
+            /*MenuItem newMenuItem2 = new MenuItem();
+            MenuItem newExistMenuItem = (MenuItem)this.mmMenu.Items[0];*/
 
-            MenuItem newMenuItem3 = new MenuItem();
+           /* MenuItem newMenuItem3 = new MenuItem();
             newMenuItem3.Header = "Generuj";
             newExistMenuItem.Items.Add(newMenuItem3);
             
-            newMenuItem3.Click += new RoutedEventHandler(menuItemClick);
+            newMenuItem3.Click += new RoutedEventHandler(menuItemClick);*/
         }
 
         private void SetPinEvents(Rectangle rec)
@@ -331,19 +331,20 @@ namespace AppSpace
             }
 
             hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
-            hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));            
+            hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));          
 
             
         }
 
         private static TextBlock CreateTextBlock(int marginLeft, int marginTop, string text)
-        {
-            TextBlock someText = new TextBlock();
-            someText.Text = text;
-            someText.Foreground = Brushes.White;
-            someText.FontSize = 9;
-            someText.Margin = new Thickness(marginLeft, marginTop, 0, 0);
-            return someText;
+        {            
+            return new TextBlock
+            {
+                Text = text,
+                Foreground = Brushes.Black,
+                FontSize = 9,
+                Margin = new Thickness(marginLeft, marginTop, 0, 0)                
+            };
         }
 
         private void CreateModule(MenuData data, out Module module, out Grid hlavni, int height)
@@ -692,7 +693,36 @@ namespace AppSpace
             return myVerticalGradient;
         }
 
-        // Zoom on Mouse wheel
+        private void Event_OpenProject(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Event_NewProject(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Event_OpenBlock(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Event_NewBlock(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Event_Build(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Event_Upload(object sender, RoutedEventArgs e)
+        {
+
+        }
+
         private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (Keyboard.Modifiers != ModifierKeys.Control)
