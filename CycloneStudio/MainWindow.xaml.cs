@@ -13,10 +13,10 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
-using AppSpace.structs;
 using System.Windows.Media.Effects;
+using CycloneStudio.structs;
 
-namespace AppSpace
+namespace CycloneStudio
 {
     /// <summary>
     /// Interakční logika pro MainWindow.xaml
@@ -29,12 +29,14 @@ namespace AppSpace
         private int moduleId;
         private int wireId;
         private Double zoom = 1;
+        private double pinPreviousStroke;
 
         private Line line = new Line();                   
         private Rectangle rectFrom, rectTo;
 
         private List<Rectangle> modules;
         private List<Rectangle> deactivated;
+        private List<Rectangle> highlighted;
 
         private FileControler fileControler;
 
@@ -43,7 +45,7 @@ namespace AppSpace
         public MainWindow()
         {
             InitializeComponent();
-
+            
             fileControler = new FileControler(new RoutedEventHandler(menuItemGenerateModule));
 
             generateMenuItems();            
@@ -52,25 +54,45 @@ namespace AppSpace
 
             modules = new List<Rectangle>();
             deactivated = new List<Rectangle>();
+            highlighted = new List<Rectangle>();
+
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
             canvas.MouseMove += canvas_MouseMove;
             canvas.MouseLeftButtonUp += canvas_MouseUp;
-            
-            /*MenuItem newMenuItem2 = new MenuItem();
-            MenuItem newExistMenuItem = (MenuItem)this.mmMenu.Items[0];*/
 
-           /* MenuItem newMenuItem3 = new MenuItem();
-            newMenuItem3.Header = "Generuj";
-            newExistMenuItem.Items.Add(newMenuItem3);
             
-            newMenuItem3.Click += new RoutedEventHandler(menuItemClick);*/
+
+            /*MenuItem newMenuItem2 = new MenuItem();
+            MenuItem newExistMenuItem = (MenuItem)this.mmMenu.Items[0];
+
+             MenuItem newMenuItem3 = new MenuItem();
+             newMenuItem3.Header = "Generuj";
+             newExistMenuItem.Items.Add(newMenuItem3);
+
+             newMenuItem3.Click += new RoutedEventHandler(menuItemClick);*/
+
+            ContentRendered += Window_ContentRendered;
         }
+
+        private void Window_ContentRendered(object sender, EventArgs e)
+        {
+            EntryWindow projectWindow = new EntryWindow();
+            projectWindow.Owner = this;
+            if (projectWindow.ShowDialog() == false)
+            {               
+                if (!projectWindow.Confirm)
+                {
+                    this.Close();
+                }                
+            }
+        }       
 
         private void SetPinEvents(Rectangle rec)
         {
             rec.MouseLeftButtonDown += ved_MouseLeftButtonDown;
             rec.MouseLeftButtonUp += ved_MouseLeftButtonUp;
-            rec.MouseLeave += EventMouseLeave;
+            rec.MouseLeave += EventMouseLeavePin;
             rec.MouseEnter += EventMouseOverpin;
         }
 
@@ -82,8 +104,9 @@ namespace AppSpace
             Rectangle rec = (Rectangle)el.Tag;
             _isRectDragInProg = true;
 
-            int counter = 100;
-            Module module = (Module)rec.Tag;
+            int counter = 300;
+            Module module = (Module)rec.Tag;            
+
             Panel.SetZIndex(el, counter++);
 
             foreach(Pin pin in module.InPins)
@@ -178,6 +201,7 @@ namespace AppSpace
 
             _isLineDrag = true;  
             deactivated.Clear();
+            highlighted.Clear();
 
             foreach (Rectangle r in modules)
             {
@@ -193,6 +217,9 @@ namespace AppSpace
                 {
                     if (startPinType != Types.IN && !pinInfo.CompareConnections(p.Rectangle) && sameModule && p.ActiveConnections.Count == 0)
                     {
+                        p.Rectangle.StrokeThickness = 2;
+                        //p.Rectangle.Stroke = Brushes.Blue;
+                        highlighted.Add(p.Rectangle);
                         continue;
                     }
                     p.Rectangle.IsHitTestVisible = false;
@@ -202,6 +229,9 @@ namespace AppSpace
                 {
                     if (startPinType != Types.OUT && !pinInfo.CompareConnections(p.Rectangle) && sameModule)
                     {
+                        p.Rectangle.StrokeThickness = 2;
+                        //p.Rectangle.Stroke = Brushes.Blue;
+                        highlighted.Add(p.Rectangle);
                         continue;
                     }
                     p.Rectangle.IsHitTestVisible = false;
@@ -267,9 +297,26 @@ namespace AppSpace
         private void EventMouseOverpin(object sender, MouseEventArgs e)
         {
             Rectangle el = (Rectangle)sender;
-            el.StrokeThickness = 3;
+            pinPreviousStroke = el.StrokeThickness;
+            el.StrokeThickness = 4;
             if (this.Cursor != Cursors.Wait)
                 Mouse.OverrideCursor = Cursors.Hand;
+
+        }
+
+        private void EventMouseLeavePin(object sender, MouseEventArgs e)
+        {
+            Rectangle el = (Rectangle)sender;
+            if (_isLineDrag)
+            {
+                el.StrokeThickness = pinPreviousStroke;
+            }
+            else
+            {
+                el.StrokeThickness = 0;
+            }            
+            if (this.Cursor != Cursors.Wait)
+                Mouse.OverrideCursor = Cursors.Arrow;
 
         }
 
@@ -292,7 +339,7 @@ namespace AppSpace
 
         private void menuItemClick(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine("jop");
+            Console.WriteLine("jop");            
         }
 
         private void generateMenuItems()
@@ -381,9 +428,8 @@ namespace AppSpace
             Canvas.SetLeft(hlavni, 0);
             Canvas.SetTop(hlavni, 0);
 
-            /*Panel.SetZIndex(hlavni, 1);
-            Panel.SetZIndex(vedHorni, 1);
-            Panel.SetZIndex(vedDolni, 1);*/
+            Panel.SetZIndex(hlavni, 1);
+            
             hlavni.Children.Add(g);
             modules.Add(g);
 
@@ -422,6 +468,7 @@ namespace AppSpace
 
             Canvas.SetTop(rectangle, 0);
             Canvas.SetLeft(rectangle, 0);
+            Panel.SetZIndex(rectangle, 2);
             SetPinEvents(rectangle);
             rectangle.Tag = pin;
             canvas.Children.Add(rectangle);
@@ -480,6 +527,7 @@ namespace AppSpace
             pinTo.Name_wire = wireName;
             pinTo.ActiveConnections.Add(data);
 
+            Panel.SetZIndex(data.Polyline, 0);
             canvas.Children.Remove(line);
             line = null;
             rectFrom = null;
@@ -492,7 +540,12 @@ namespace AppSpace
             {               
                 r.IsHitTestVisible = change;
             }
+            foreach (Rectangle r in highlighted)
+            {
+                r.StrokeThickness = 0;
+            }
             deactivated.Clear();
+            highlighted.Clear();
         }
 
         private void canvas_MouseMove(object sender, MouseEventArgs e)
@@ -547,11 +600,11 @@ namespace AppSpace
             polyline.MouseEnter += EventMouseOverLine;
             polyline.MouseLeave += EventMouseLeaveLine;
             // Create a collection of points for a polyline  
-            Point Point1 = new Point(startX, startY);
+            Point Point1 = new Point(startX +10, startY);
             double distance = Math.Abs(startX - endX);
             Point Point3 = new Point(startX + (distance / 2), startY);
             Point Point4 = new Point(startX + (distance / 2), endY);
-            Point Point5 = new Point(endX, endY);
+            Point Point5 = new Point(endX -10, endY);
 
             PointCollection polygonPoints = new PointCollection
             {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Shapes;
 
-namespace AppSpace.structs
+namespace CycloneStudio.structs
 {
     enum Types
     {

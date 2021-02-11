@@ -9,12 +9,15 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Shapes;
 using System.Windows.Media;
+using System.ComponentModel;
 
-namespace AppSpace.structs
+namespace CycloneStudio.structs
 {
     class FileControler
     {
         private readonly RoutedEventHandler eventHandler;
+
+        public FileControler() { }
 
         public FileControler(RoutedEventHandler eventHandler) => this.eventHandler = eventHandler;
 
@@ -29,7 +32,7 @@ namespace AppSpace.structs
         private void ReadAndGenerateItems(Menu menu, DirectoryInfo[] subdir)
         {
             foreach (DirectoryInfo sub in subdir)
-            {   
+            {
                 MenuItem newMenuItem = new MenuItem();
                 newMenuItem.Header = sub.Name;
                 menu.Items.Add(newMenuItem);
@@ -38,10 +41,10 @@ namespace AppSpace.structs
                 if (innerDir.Length != 0)
                 {
                     foreach (DirectoryInfo dir in innerDir)
-                    {                       
+                    {
                         MenuItem subItem = new MenuItem();
                         subItem.Header = dir.Name;
-                        newMenuItem.Items.Add(subItem);                       
+                        newMenuItem.Items.Add(subItem);
 
                         GenerateItems(dir, subItem);
                     }
@@ -53,15 +56,21 @@ namespace AppSpace.structs
                 else
                 {
                     GenerateItems(sub, newMenuItem);
-                }                
+                }
             }
         }
 
         private void GenerateItems(DirectoryInfo sub, MenuItem newMenuItem)
         {
             FileInfo[] Files = sub.GetFiles("*.v");
-            foreach (FileInfo file in Files)
-            {
+
+            var nums = "0123456789".ToCharArray();
+            var sortedFiles = Files
+              .OrderBy(x => TrimModuleName(x).LastIndexOfAny(nums))
+              .ThenBy(x => x.Name);
+
+            foreach (FileInfo file in sortedFiles)
+            {                
                 MenuItem newSubMenuItem = new MenuItem();
                 newSubMenuItem.Header = TrimModuleName(file);
                 newMenuItem.Items.Add(newSubMenuItem);
@@ -77,19 +86,20 @@ namespace AppSpace.structs
             MenuData data = new MenuData();//
             string text = File.ReadAllText(path);
             string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\n\\s(]+)\\);");
-            data.Name = textSplited[1];
+            data.Name = textSplited[1].Remove(0, 1); ;
             data.FilePath = path;
-            
+
 
             string[] pins = Regex.Replace(textSplited[2], @"\s+", "").Split(',');
-            
+
             for (int i = 0; i < pins.Length; i++)
             {
                 if (pins[i].Contains("outputwire"))
                 {
-                    data.OutPins.Add(pins[i].Remove(0,10));
+                    data.OutPins.Add(pins[i].Remove(0, 10));
                     //Console.WriteLine("out "+pins[i].Remove(0, 10));
-                } else if (pins[i].Contains("inputwire"))
+                }
+                else if (pins[i].Contains("inputwire"))
                 {
                     data.InPins.Add(pins[i].Remove(0, 9));
                     //Console.WriteLine("in " + pins[i].Remove(0, 9));
@@ -97,11 +107,11 @@ namespace AppSpace.structs
             }
 
             string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d,\\s]+)assign");
-            if (textSplitedTwo.Length >1)
+            if (textSplitedTwo.Length > 1)
             {
                 string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
-                data.HiddenPins = new List<string>(result);                
-            }            
+                data.HiddenPins = new List<string>(result);
+            }
             return data;
         }
 
@@ -161,6 +171,23 @@ namespace AppSpace.structs
             name = name.Remove(name.Length - 2);
             return name;
         }
-        
+
+        public void GenerateProjectsList(ItemCollection items)
+        {
+            DirectoryInfo d = new DirectoryInfo(@"../../workspace");
+            DirectoryInfo[] subdir = d.GetDirectories();
+
+            foreach (DirectoryInfo sub in subdir)
+            {                
+                LoadWindowProjects project = new LoadWindowProjects
+                {
+                    Name = sub.Name,
+                    Path = sub.FullName,
+                    CreateDate = sub.CreationTime.ToString()
+                };
+                items.Add(project);
+                items.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
+            }
+        }
     }
 }

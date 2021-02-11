@@ -70,11 +70,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="EntryWindow.xaml.cs">
+      <DependentUpon>EntryWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="structs\LoadWindowProjects.cs" />
     <Compile Include="structs\MenuData.cs" />
     <Compile Include="structs\Module.cs" />
     <Compile Include="structs\Pin.cs" />
     <Compile Include="structs\PolylineTagData.cs" />
     <Compile Include="structs\FileControler.cs" />
+    <Page Include="EntryWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
