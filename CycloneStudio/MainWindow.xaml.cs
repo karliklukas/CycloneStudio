@@ -77,14 +77,18 @@ namespace CycloneStudio
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            EntryWindow projectWindow = new EntryWindow();
-            projectWindow.Owner = this;
-            if (projectWindow.ShowDialog() == false)
-            {               
-                if (!projectWindow.Confirm)
+            EntryWindow entryWindow = new EntryWindow();
+            entryWindow.Owner = this;
+            if (entryWindow.ShowDialog() == true)
+            {
+                string path = entryWindow.Path;
+                /*if (!projectWindow.Confirm)
                 {
-                    this.Close();
-                }                
+                    
+                }*/              
+            }else
+            {
+                this.Close();
             }
         }       
 
@@ -98,31 +102,90 @@ namespace CycloneStudio
 
         private void rect_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (_isLineDrag) return;
-
-            Grid el = (Grid)sender;
-            Rectangle rec = (Rectangle)el.Tag;
-            _isRectDragInProg = true;
-
-            int counter = 300;
-            Module module = (Module)rec.Tag;            
-
-            Panel.SetZIndex(el, counter++);
-
-            foreach(Pin pin in module.InPins)
+            if (deleteToggle.IsChecked == true)
             {
-                Panel.SetZIndex(pin.Rectangle, counter++);
+                string message = "Do you want to delete this module?";
+                string title = "Delete module";
+                MessageBoxImage icon = MessageBoxImage.Question;
+                MessageBoxButton buttons = MessageBoxButton.YesNo;
+                MessageBoxResult result = MessageBox.Show(message, title, buttons, icon);
+                if (result == MessageBoxResult.Yes)
+                {
+                    Grid el = (Grid)sender;
+                    Rectangle rec = (Rectangle)el.Tag;
+                    Module module = (Module)rec.Tag;                   
+
+                    foreach (Pin pin in module.InPins)
+                    {
+                        foreach (PolylineTagData data in pin.ActiveConnections)
+                        {                            
+                            Pin outPin = (Pin)data.RecPinOut.Tag;
+                            Polyline poly = data.Polyline;
+                            Label label = (Label)poly.Tag;                          
+
+                            outPin.ActiveConnections.Remove(data);
+                            if (outPin.ActiveConnections.Count == 0)
+                            {
+                                outPin.Connected = false;
+                                outPin.Name_wire = "";
+                            }
+                            canvas.Children.Remove(label);
+                            canvas.Children.Remove(poly);
+                        }
+                        canvas.Children.Remove(pin.Rectangle);
+                    }
+                    foreach (Pin pin in module.OutPins)
+                    {
+                        foreach (PolylineTagData data in pin.ActiveConnections)
+                        {
+                            Pin inPin = (Pin)data.RecPinIn.Tag;                            
+                            Polyline poly = data.Polyline;
+                            Label label = (Label)poly.Tag;
+
+                            inPin.ActiveConnections.Remove(data);
+                            inPin.Connected = false;
+                            inPin.Name_wire = "";
+                           
+                            canvas.Children.Remove(label);
+                            canvas.Children.Remove(poly);
+                        }
+                        canvas.Children.Remove(pin.Rectangle);
+                    }
+
+                    modules.Remove(rec);
+                    canvas.Children.Remove(el);
+                }
+
             }
-            foreach (Pin pin in module.OutPins)
+            else if (handToggle.IsChecked == true)
             {
-                Panel.SetZIndex(pin.Rectangle, counter++);
-            }                     
+                if (_isLineDrag) return;
+                EnableToggleButtons(false);
+                Grid el = (Grid)sender;
+                Rectangle rec = (Rectangle)el.Tag;
+                _isRectDragInProg = true;
+
+                int counter = 300;
+                Module module = (Module)rec.Tag;
+
+                Panel.SetZIndex(el, counter++);
+
+                foreach (Pin pin in module.InPins)
+                {
+                    Panel.SetZIndex(pin.Rectangle, counter++);
+                }
+                foreach (Pin pin in module.OutPins)
+                {
+                    Panel.SetZIndex(pin.Rectangle, counter++);
+                }
+            }
+                              
         }
 
         private void rect_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            if (_isLineDrag) return;
-
+        {            
+            if (_isLineDrag || handToggle.IsChecked == false) return;
+            EnableToggleButtons(true);
             Grid el = (Grid)sender;
             Rectangle rec = (Rectangle)el.Tag;
             _isRectDragInProg = false;
@@ -183,6 +246,7 @@ namespace CycloneStudio
 
         private void ved_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            if (handToggle.IsChecked == false) return;
             if (_isLineDragDone)
             {
                 _isLineDragDone = false;
@@ -198,7 +262,7 @@ namespace CycloneStudio
             {               
                 return;
             }
-
+            EnableToggleButtons(false);
             _isLineDrag = true;  
             deactivated.Clear();
             highlighted.Clear();
@@ -260,6 +324,67 @@ namespace CycloneStudio
             Panel.SetZIndex(line, 100);            
         }
 
+        private void ved_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (!_isLineDrag || handToggle.IsChecked == false) return;
+            _isLineDragDone = true;
+            EnableToggleButtons(true);
+            Rectangle el = (Rectangle)sender;
+            
+            rectTo = el;
+            CalculateNewCoordinates(el, out double x, out double y);
+            line.X2 = x;
+            line.Y2 = y;
+            ChangePinHitVisibility(true);
+
+            _isLineDrag = false;
+           
+
+            Pin pinFrom = (Pin)rectFrom.Tag;
+            Pin pinTo = (Pin)rectTo.Tag;
+            PolylineTagData data = new PolylineTagData();
+           
+            string wireName= "e";
+            
+            if (pinFrom.Type == Types.IN)
+            {
+                data.RecPinIn = rectFrom;
+                data.RecPinOut = rectTo;
+                if (pinTo.Connected)
+                {
+                    wireName = pinTo.Name_wire;                    
+                }
+            } else
+            {
+                data.RecPinIn = rectTo;
+                data.RecPinOut = rectFrom;                
+                if (pinFrom.Connected)
+                {
+                    wireName = pinFrom.Name_wire;                    
+                }
+            }
+
+            if (string.Equals(wireName, "e"))
+                wireName = "w" + ++wireId;
+
+            data.Id = wireName;
+            data.Polyline = GenerateLine(line.X1, line.Y1, line.X2, line.Y2, wireName, data);
+
+            pinFrom.Connected = true;
+            pinFrom.Name_wire = wireName;
+            pinFrom.ActiveConnections.Add(data);
+            pinTo.Connected = true;
+            pinTo.Name_wire = wireName;
+            pinTo.ActiveConnections.Add(data);
+
+            pinPreviousStroke = 0;
+            Panel.SetZIndex(data.Polyline, 0);
+            canvas.Children.Remove(line);
+            line = null;
+            rectFrom = null;
+            rectTo = null;            
+        }
+
         private void MovePinsOnMouseMove(double left, double top, List<Pin> data)
         {
             foreach (Pin p in data)
@@ -296,10 +421,11 @@ namespace CycloneStudio
 
         private void EventMouseOverpin(object sender, MouseEventArgs e)
         {
+            if (handToggle.IsChecked == false) return;
             Rectangle el = (Rectangle)sender;
             pinPreviousStroke = el.StrokeThickness;
             el.StrokeThickness = 4;
-            if (this.Cursor != Cursors.Wait)
+            if (this.Cursor != Cursors.Hand)
                 Mouse.OverrideCursor = Cursors.Hand;
 
         }
@@ -308,14 +434,15 @@ namespace CycloneStudio
         {
             Rectangle el = (Rectangle)sender;
             if (_isLineDrag)
-            {
+            {                
                 el.StrokeThickness = pinPreviousStroke;
             }
             else
-            {
+            {                
                 el.StrokeThickness = 0;
+                pinPreviousStroke = 0;
             }            
-            if (this.Cursor != Cursors.Wait)
+            if (this.Cursor != Cursors.Arrow)
                 Mouse.OverrideCursor = Cursors.Arrow;
 
         }
@@ -425,7 +552,7 @@ namespace CycloneStudio
                 Tag = g,
                 Effect = GetShadowEffect()
             };
-            Canvas.SetLeft(hlavni, 0);
+            Canvas.SetLeft(hlavni, 50);
             Canvas.SetTop(hlavni, 0);
 
             Panel.SetZIndex(hlavni, 1);
@@ -467,7 +594,7 @@ namespace CycloneStudio
             };
 
             Canvas.SetTop(rectangle, 0);
-            Canvas.SetLeft(rectangle, 0);
+            Canvas.SetLeft(rectangle, 50);
             Panel.SetZIndex(rectangle, 2);
             SetPinEvents(rectangle);
             rectangle.Tag = pin;
@@ -476,63 +603,7 @@ namespace CycloneStudio
             return pin;
         }
 
-        private void ved_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (!_isLineDrag) return;
-            _isLineDragDone = true;
-            Rectangle el = (Rectangle)sender;
-            rectTo = el;
-            CalculateNewCoordinates(el, out double x, out double y);
-            line.X2 = x;
-            line.Y2 = y;
-            ChangePinHitVisibility(true);
-
-            _isLineDrag = false;
-           
-
-            Pin pinFrom = (Pin)rectFrom.Tag;
-            Pin pinTo = (Pin)rectTo.Tag;
-            PolylineTagData data = new PolylineTagData();
-           
-            string wireName= "e";
-            
-            if (pinFrom.Type == Types.IN)
-            {
-                data.RecPinIn = rectFrom;
-                data.RecPinOut = rectTo;
-                if (pinTo.Connected)
-                {
-                    wireName = pinTo.Name_wire;                    
-                }
-            } else
-            {
-                data.RecPinIn = rectTo;
-                data.RecPinOut = rectFrom;                
-                if (pinFrom.Connected)
-                {
-                    wireName = pinFrom.Name_wire;                    
-                }
-            }
-
-            if (string.Equals(wireName, "e"))
-                wireName = "w" + ++wireId;
-
-            data.Id = wireName;
-            data.Polyline = GenerateLine(line.X1, line.Y1, line.X2, line.Y2, wireName, data);
-
-            pinFrom.Connected = true;
-            pinFrom.Name_wire = wireName;
-            pinFrom.ActiveConnections.Add(data);
-            pinTo.Connected = true;
-            pinTo.Name_wire = wireName;
-            pinTo.ActiveConnections.Add(data);
-
-            Panel.SetZIndex(data.Polyline, 0);
-            canvas.Children.Remove(line);
-            line = null;
-            rectFrom = null;
-            rectTo = null;            
-        }
+       
 
         private void ChangePinHitVisibility(bool change)
         {
@@ -571,7 +642,7 @@ namespace CycloneStudio
         {            
             if (!_isLineDrag) return;
             if (!canvas.IsMouseDirectlyOver) return;
-            
+            EnableToggleButtons(true);
             _isLineDrag = false;
             canvas.Children.Remove(line);
             ChangePinHitVisibility(true);
@@ -634,9 +705,10 @@ namespace CycloneStudio
 
         private void poly_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            if (deleteToggle.IsChecked == false) return;
             string message = "Do you want to delete this connection?";
             string title = "Delete connection";
-            MessageBoxImage icon = MessageBoxImage.Warning;
+            MessageBoxImage icon = MessageBoxImage.Question;
             MessageBoxButton buttons = MessageBoxButton.YesNo;
             MessageBoxResult result = MessageBox.Show(message, title, buttons, icon);
             if (result == MessageBoxResult.Yes)
@@ -644,9 +716,8 @@ namespace CycloneStudio
                 Polyline poly = (Polyline)sender;
                 Label label = (Label)poly.Tag;
                 PolylineTagData data = (PolylineTagData)label.Tag;
-
                 Pin inPin = (Pin)data.RecPinIn.Tag;
-                Pin outPin = (Pin)data.RecPinOut.Tag;
+                Pin outPin = (Pin)data.RecPinOut.Tag;                
 
                 inPin.ActiveConnections.Remove(data);
                 inPin.Connected = false;
@@ -667,10 +738,11 @@ namespace CycloneStudio
             }
 
             
-        }
+        }       
 
         private void EventMouseOverLine(object sender, MouseEventArgs e)
         {
+            if (deleteToggle.IsChecked == false) return;
             Polyline poly = (Polyline)sender;
             if (!poly.IsHitTestVisible)
             {
@@ -685,6 +757,7 @@ namespace CycloneStudio
 
         private void EventMouseLeaveLine(object sender, MouseEventArgs e)
         {
+            if (deleteToggle.IsChecked == false) return;
             Polyline poly = (Polyline)sender;
             poly.StrokeThickness = 2;
             poly.Stroke = Brushes.Black;
@@ -748,7 +821,24 @@ namespace CycloneStudio
 
         private void Event_OpenProject(object sender, RoutedEventArgs e)
         {
-
+            EntryWindow entryWindow = new EntryWindow();
+            entryWindow.Owner = this;            
+            if (entryWindow.ShowDialog() == true )
+            {
+                if (entryWindow.Confirm)
+                {
+                    canvas.Children.Clear();
+                    modules.Clear();
+                    moduleId = 0;
+                    wireId = 0;
+                    //TODO
+                }
+                else
+                {
+                    string path = entryWindow.Path;
+                    //TODO
+                }
+            }            
         }
 
         private void Event_NewProject(object sender, RoutedEventArgs e)
@@ -756,7 +846,21 @@ namespace CycloneStudio
 
         }
 
+        private void Event_SaveProject(object sender, RoutedEventArgs e)
+        {
+            var dialog = new InputDialog();
+            if (dialog.ShowDialog() == true)
+            {
+                MessageBox.Show("You said: " + dialog.ResponseText);
+            }
+        }
+
         private void Event_OpenBlock(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
+        private void Event_SaveBlock(object sender, RoutedEventArgs e)
         {
 
         }
@@ -774,6 +878,32 @@ namespace CycloneStudio
         private void Event_Upload(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void HandToggleChecked(object sender, RoutedEventArgs e)
+        {
+            deleteToggle.IsChecked = false;
+        }
+
+        private void HandToggleUnchecked(object sender, RoutedEventArgs e)
+        {
+            deleteToggle.IsChecked = true;
+        }
+
+        private void DeleteToggleUnchecked(object sender, RoutedEventArgs e)
+        {
+            handToggle.IsChecked = true;
+        }
+
+        private void DeleteToggleChecked(object sender, RoutedEventArgs e)
+        {
+            handToggle.IsChecked = false;
+        }
+
+        private void EnableToggleButtons(bool state)
+        {
+            handToggle.IsEnabled = state;
+            deleteToggle.IsEnabled = state;
         }
 
         private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)

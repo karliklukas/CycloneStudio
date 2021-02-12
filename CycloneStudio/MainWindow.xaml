@@ -17,8 +17,36 @@
                 </GradientStopCollection>
             </GradientBrush.GradientStops>
         </LinearGradientBrush>
+        <ControlTemplate x:Key="ToggleButtonControlTemplate1" TargetType="{x:Type ToggleButton}">
+            <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                <ContentPresenter x:Name="contentPresenter" ContentTemplate="{TemplateBinding ContentTemplate}" Content="{TemplateBinding Content}" ContentStringFormat="{TemplateBinding ContentStringFormat}" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="Button.IsDefaulted" Value="True">
+                    <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" TargetName="border" Value="#FFBEE6FD"/>
+                    <Setter Property="BorderBrush" TargetName="border" Value="#FF3C7FB1"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" TargetName="border" Value="#FFC4E5F6"/>
+                    <Setter Property="BorderBrush" TargetName="border" Value="#FF2C628B"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Background" TargetName="border" Value="#FF00A8FF"/>
+                    <Setter Property="BorderBrush" TargetName="border" Value="#FF245A83"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" TargetName="border" Value="#FFF4F4F4"/>
+                    <Setter Property="BorderBrush" TargetName="border" Value="#FFADB2B5"/>
+                    <Setter Property="Foreground" Value="#FF838383"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
     </Window.Resources>
-    
+
     <Grid>
         <ScrollViewer Grid.ColumnSpan="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,30,0,0">
             <Canvas x:Name="canvas" Height="980" Width="1920" MouseWheel="Canvas_MouseWheel">
@@ -31,7 +59,7 @@
                                 </GeometryDrawing.Geometry>
                                 <GeometryDrawing.Pen>
                                     <Pen Brush="Gray" Thickness="1"/>
-                                </GeometryDrawing.Pen>                                
+                                </GeometryDrawing.Pen>
                             </GeometryDrawing>
                         </DrawingBrush.Drawing>
                     </DrawingBrush>
@@ -39,16 +67,29 @@
             </Canvas>
         </ScrollViewer>
 
-        <Menu x:Name="mmMenu" Height="30" VerticalAlignment="Top"  FontSize="15" Background="{StaticResource NormalBrush}">
+        <Menu x:Name="mmMenu" Height="30" VerticalAlignment="Top" FontSize="15" Background="{StaticResource NormalBrush}">
             <MenuItem Header="File" Height="30" Width="40">
                 <MenuItem Header="Open project" Click="Event_OpenProject" />
                 <MenuItem Header="New project" Click="Event_NewProject" />
+                <MenuItem Header="Save project" Click="Event_SaveProject" />
                 <MenuItem Header="Open block" Click="Event_OpenBlock" />
                 <MenuItem Header="New block" Click="Event_NewBlock"/>
+                <MenuItem Header="Save block" Click="Event_SaveBlock"/>
             </MenuItem>
             <MenuItem Header="Build" Height="30" Width="50" Click="Event_Build"/>
             <MenuItem Header="Upload" Height="30" Width="60" Click="Event_Upload"/>
         </Menu>
+
+        <ToggleButton x:Name="deleteToggle" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="10,85,0,0" Height="40" Width="40" 
+                      Template="{DynamicResource ToggleButtonControlTemplate1}" Background="White" Checked="DeleteToggleChecked" Unchecked="DeleteToggleUnchecked">
+            <Image Source="./graphics/delHand.png" Stretch="Fill"/>
+        </ToggleButton>
+        <ToggleButton x:Name="handToggle" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="10,35,0,0" Height="40" Width="40" 
+                      Template="{DynamicResource ToggleButtonControlTemplate1}" Background="White" IsChecked="True" Checked="HandToggleChecked" 
+                      Unchecked="HandToggleUnchecked">
+            <Image Source="./graphics/hand.png" Stretch="Fill"/>
+        </ToggleButton>       
+
     </Grid>
 </Window>
     

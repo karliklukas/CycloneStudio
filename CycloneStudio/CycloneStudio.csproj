@@ -73,6 +73,9 @@
     <Compile Include="EntryWindow.xaml.cs">
       <DependentUpon>EntryWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="InputDialog.xaml.cs">
+      <DependentUpon>InputDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="structs\LoadWindowProjects.cs" />
     <Compile Include="structs\MenuData.cs" />
     <Compile Include="structs\Module.cs" />
@@ -80,6 +83,10 @@
     <Compile Include="structs\PolylineTagData.cs" />
     <Compile Include="structs\FileControler.cs" />
     <Page Include="EntryWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="InputDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -194,6 +201,13 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="graphics\icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="graphics\delHand.png" />
+    <Resource Include="graphics\hand.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="graphics\save.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

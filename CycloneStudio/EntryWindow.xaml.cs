@@ -49,8 +49,7 @@ namespace CycloneStudio
 
         private void Event_Close(object sender, RoutedEventArgs e)
         {
-            Confirm = false;
-            this.Close();
+            DialogResult = false;            
         }
 
         private void Event_OpenProject(object sender, RoutedEventArgs e)
@@ -58,18 +57,18 @@ namespace CycloneStudio
             
                         
             if (listViewProjects.SelectedItem != null)
-            {
-                Confirm = true;
+            {                
                 LoadWindowProjects selectedItem = listViewProjects.SelectedItem as LoadWindowProjects;
                 Path = selectedItem.Path;                
             }
+            DialogResult = true;
             //this.Close();
         }
 
         private void Event_NewProject(object sender, RoutedEventArgs e)
         {
-            Confirm = true;            
-            this.Close();
+            Confirm = true;
+            DialogResult = true;            
         }
     }
 }
