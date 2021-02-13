@@ -172,11 +172,13 @@ namespace CycloneStudio
 
                 foreach (Pin pin in module.InPins)
                 {
-                    Panel.SetZIndex(pin.Rectangle, counter++);
+                    if (!pin.Hidden)                    
+                        Panel.SetZIndex(pin.Rectangle, counter++);
                 }
                 foreach (Pin pin in module.OutPins)
                 {
-                    Panel.SetZIndex(pin.Rectangle, counter++);
+                    if (!pin.Hidden)                    
+                        Panel.SetZIndex(pin.Rectangle, counter++);
                 }
             }
                               
@@ -195,11 +197,13 @@ namespace CycloneStudio
 
             foreach (Pin pin in module.InPins)
             {
-                Panel.SetZIndex(pin.Rectangle, 1);
+                if (!pin.Hidden)
+                    Panel.SetZIndex(pin.Rectangle, 1);
             }
             foreach (Pin pin in module.OutPins)
             {
-                Panel.SetZIndex(pin.Rectangle, 1);
+                if (!pin.Hidden)
+                    Panel.SetZIndex(pin.Rectangle, 1);
             }
 
             PinsRestoreLines(module.InPins);
@@ -389,7 +393,7 @@ namespace CycloneStudio
         {
             foreach (Pin p in data)
             {
-                if (p != null)
+                if (p != null && p.Rectangle != null)
                 {
                     Rectangle r = p.Rectangle;
                     Canvas.SetLeft(r, left);
@@ -489,19 +493,33 @@ namespace CycloneStudio
             int leftInMargin = 10, leftOutMargin = 130;
             int count = 0;
 
-            foreach (string pin in inPins)
-            {
-                Pin inpin1 = CreatePin(leftInMargin, topMargin + topMargin * count, Types.IN, pin);
-                hlavni.Children.Add(CreateTextBlock(15, 15 + topMargin * (count++), pin));
-                module.InPins.Add(inpin1);
+            foreach (string pin in data.InPins)
+            {               
+                if (data.HiddenPins.Contains(pin))
+                {                    
+                    module.InPins.Add(CreateHiddenPin(Types.IN, pin));
+                } else
+                {
+                    module.InPins.Add(CreatePin(leftInMargin, topMargin + topMargin * count, Types.IN, pin));
+                    hlavni.Children.Add(CreateTextBlock(15, 15 + topMargin * (count++), pin));                    
+                }
+                
             }
 
             count = 0;
-            foreach (string pin in outPins)
-            {
-                Pin outpin1 = CreatePin(leftOutMargin, topMargin + topMargin * count, Types.OUT, pin);
-                hlavni.Children.Add(CreateTextBlock(90, 15 + topMargin * (count++), pin));
-                module.OutPins.Add(outpin1);
+            foreach (string pin in data.OutPins)
+            {                
+                if (data.HiddenPins.Contains(pin))
+                {                    
+                    module.OutPins.Add(CreateHiddenPin(Types.OUT, pin));
+                }
+                else
+                {                   
+                    module.OutPins.Add(CreatePin(leftOutMargin, topMargin + topMargin * count, Types.OUT, pin));
+                    hlavni.Children.Add(CreateTextBlock(90, 15 + topMargin * (count++), pin));
+                }
+                
+               
             }
 
             hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
@@ -603,7 +621,20 @@ namespace CycloneStudio
             return pin;
         }
 
-       
+        private Pin CreateHiddenPin(Types pinType, string name)
+        {
+            Rectangle rectangle = new Rectangle();
+
+            Pin pin = new Pin
+            {
+                Connected = false,
+                Hidden = true,
+                Name = name,
+                Type = pinType,
+                Rectangle = rectangle
+            };
+            return pin;
+        }
 
         private void ChangePinHitVisibility(bool change)
         {
@@ -872,7 +903,7 @@ namespace CycloneStudio
 
         private void Event_Build(object sender, RoutedEventArgs e)
         {
-
+            fileControler.BuildVerilogForProject(modules, "nameaaa");
         }
 
         private void Event_Upload(object sender, RoutedEventArgs e)

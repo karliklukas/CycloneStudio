@@ -189,5 +189,82 @@ namespace CycloneStudio.structs
                 items.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
             }
         }
+
+        public bool BuildVerilogForProject(List<Rectangle> modules, string name)
+        {           
+            List<string> inPins = new List<string>();
+            List<string> outPins = new List<string>();
+            HashSet<string> wires = new HashSet<string>();
+
+            StringBuilder middlePart = new StringBuilder();
+            StringBuilder topPart = new StringBuilder();
+            StringBuilder hiddenPart = new StringBuilder();
+
+            string inPrefix = "input wire ";
+            string outPrefix = "output wire ";
+            topPart.Append("module " + name + "(");
+            hiddenPart.Append("//hidden ");
+            foreach (var rec in modules)
+            {
+                Module module = rec.Tag as Module;                
+
+                middlePart.Append("c" + module.Name + " ");
+                middlePart.Append(module.Id + "(");
+
+                foreach (Pin pin in module.InPins)
+                {
+                    if (pin.Hidden)
+                    {
+                        middlePart.Append("." + pin.Name + "(" + pin.Name + "),");
+                        topPart.Append(inPrefix + pin.Name + ",");
+                        hiddenPart.Append(pin.Name + ",");
+                    }
+                    else
+                    {
+                        middlePart.Append("." + pin.Name + "(" + pin.Name_wire + "),");
+                        wires.Add(pin.Name_wire);
+                    }
+                    
+                }
+                foreach (Pin pin in module.OutPins)
+                {
+                    if (pin.Hidden)
+                    {
+                        middlePart.Append("." + pin.Name + "(" + pin.Name + "),");
+                        topPart.Append(outPrefix + pin.Name + ",");
+                        hiddenPart.Append(pin.Name + ",");
+                    }
+                    else
+                    {
+                        middlePart.Append("." + pin.Name + "(" + pin.Name_wire + "),");
+                        wires.Add(pin.Name_wire);
+                    }
+                }
+                middlePart.Remove(middlePart.Length - 1, 1);
+                middlePart.AppendLine(");");
+
+            }           
+            middlePart.AppendLine("\nendmodule");
+
+            topPart.Remove(topPart.Length - 1, 1);
+            topPart.AppendLine(");");
+            topPart.AppendLine(hiddenPart.ToString());
+
+            hiddenPart.Remove(hiddenPart.Length - 1, 1);
+            hiddenPart.Append("");
+
+            topPart.Append("wire ");
+            foreach (string wire in wires)
+            {
+                topPart.Append(wire + ",");
+            }
+            topPart.Remove(topPart.Length - 1, 1);            
+            topPart.AppendLine(";");
+
+            topPart.AppendLine(middlePart.ToString());
+
+            Console.WriteLine(topPart.ToString());
+            return false;
+        }
     }
 }
