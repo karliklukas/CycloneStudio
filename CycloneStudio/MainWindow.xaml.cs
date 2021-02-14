@@ -26,17 +26,22 @@ namespace CycloneStudio
         private bool _isRectDragInProg = false;
         private bool _isLineDrag = false;
         private bool _isLineDragDone = false;
+        private bool boardChoosen = false;
         private int moduleId;
         private int wireId;
         private Double zoom = 1;
         private double pinPreviousStroke;
 
-        private Line line = new Line();                   
+        private Line line;                   
         private Rectangle rectFrom, rectTo;
 
         private List<Rectangle> modules;
         private List<Rectangle> deactivated;
         private List<Rectangle> highlighted;
+
+        private List<MenuItem> unenabledBoards;
+        private List<MenuItem> boardItem; 
+        private List<MenuItem> unenabledItems;
 
         private FileControler fileControler;
 
@@ -46,9 +51,9 @@ namespace CycloneStudio
         {
             InitializeComponent();
             
-            fileControler = new FileControler(new RoutedEventHandler(menuItemGenerateModule));
+            fileControler = new FileControler(new RoutedEventHandler(MenuItemGenerateModule));
 
-            generateMenuItems();            
+            GenerateMenuItems();            
             moduleId = 0;
             wireId = 0;
 
@@ -56,21 +61,14 @@ namespace CycloneStudio
             deactivated = new List<Rectangle>();
             highlighted = new List<Rectangle>();
 
+            unenabledBoards = new List<MenuItem>();
+            unenabledItems = new List<MenuItem>();
+            boardItem = new List<MenuItem>();
+
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-            canvas.MouseMove += canvas_MouseMove;
-            canvas.MouseLeftButtonUp += canvas_MouseUp;
-
-            
-
-            /*MenuItem newMenuItem2 = new MenuItem();
-            MenuItem newExistMenuItem = (MenuItem)this.mmMenu.Items[0];
-
-             MenuItem newMenuItem3 = new MenuItem();
-             newMenuItem3.Header = "Generuj";
-             newExistMenuItem.Items.Add(newMenuItem3);
-
-             newMenuItem3.Click += new RoutedEventHandler(menuItemClick);*/
+            canvas.MouseMove += Canvas_MouseMove;
+            canvas.MouseLeftButtonUp += Canvas_MouseUp;
 
             ContentRendered += Window_ContentRendered;
         }
@@ -94,67 +92,17 @@ namespace CycloneStudio
 
         private void SetPinEvents(Rectangle rec)
         {
-            rec.MouseLeftButtonDown += ved_MouseLeftButtonDown;
-            rec.MouseLeftButtonUp += ved_MouseLeftButtonUp;
+            rec.MouseLeftButtonDown += Pin_MouseLeftButtonDown;
+            rec.MouseLeftButtonUp += Pin_MouseLeftButtonUp;
             rec.MouseLeave += EventMouseLeavePin;
             rec.MouseEnter += EventMouseOverpin;
         }
 
-        private void rect_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void Module_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (deleteToggle.IsChecked == true)
             {
-                string message = "Do you want to delete this module?";
-                string title = "Delete module";
-                MessageBoxImage icon = MessageBoxImage.Question;
-                MessageBoxButton buttons = MessageBoxButton.YesNo;
-                MessageBoxResult result = MessageBox.Show(message, title, buttons, icon);
-                if (result == MessageBoxResult.Yes)
-                {
-                    Grid el = (Grid)sender;
-                    Rectangle rec = (Rectangle)el.Tag;
-                    Module module = (Module)rec.Tag;                   
-
-                    foreach (Pin pin in module.InPins)
-                    {
-                        foreach (PolylineTagData data in pin.ActiveConnections)
-                        {                            
-                            Pin outPin = (Pin)data.RecPinOut.Tag;
-                            Polyline poly = data.Polyline;
-                            Label label = (Label)poly.Tag;                          
-
-                            outPin.ActiveConnections.Remove(data);
-                            if (outPin.ActiveConnections.Count == 0)
-                            {
-                                outPin.Connected = false;
-                                outPin.Name_wire = "";
-                            }
-                            canvas.Children.Remove(label);
-                            canvas.Children.Remove(poly);
-                        }
-                        canvas.Children.Remove(pin.Rectangle);
-                    }
-                    foreach (Pin pin in module.OutPins)
-                    {
-                        foreach (PolylineTagData data in pin.ActiveConnections)
-                        {
-                            Pin inPin = (Pin)data.RecPinIn.Tag;                            
-                            Polyline poly = data.Polyline;
-                            Label label = (Label)poly.Tag;
-
-                            inPin.ActiveConnections.Remove(data);
-                            inPin.Connected = false;
-                            inPin.Name_wire = "";
-                           
-                            canvas.Children.Remove(label);
-                            canvas.Children.Remove(poly);
-                        }
-                        canvas.Children.Remove(pin.Rectangle);
-                    }
-
-                    modules.Remove(rec);
-                    canvas.Children.Remove(el);
-                }
+                DeleteModule(sender);
 
             }
             else if (handToggle.IsChecked == true)
@@ -184,7 +132,92 @@ namespace CycloneStudio
                               
         }
 
-        private void rect_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void DeleteModule(object sender)
+        {           
+            MessageBoxResult result = ShowQuestionDialog("Do you want to delete this module?", "Delete module");
+            if (result == MessageBoxResult.Yes)
+            {
+                Grid el = (Grid)sender;
+                Rectangle rec = (Rectangle)el.Tag;
+                Module module = (Module)rec.Tag;
+
+                MenuItem it = unenabledItems.Find(item => item.Header as string == module.Name);
+                if (it != null)
+                {
+                    unenabledItems.Remove(it);
+                    it.IsEnabled = true;
+                }
+
+                it = boardItem.Find(item => item.Header as string == module.Name);
+                if (it != null)
+                {
+                    boardItem.Remove(it);
+                    it.IsEnabled = true;
+                    if (boardItem.Count == 0)
+                    {
+                        foreach (var item in unenabledBoards)
+                        {
+                            item.IsEnabled = true;
+                        }
+                        unenabledBoards.Clear();
+                    }
+                }
+
+                DeleteModulesPinsAndConnections(module.InPins);
+                DeleteModulesPinsAndConnections(module.OutPins);
+
+                if (Int32.TryParse(module.Id.Remove(0, 1), out int numValue))
+                {
+                    if (numValue == moduleId)
+                        moduleId--;
+                }
+
+                modules.Remove(rec);
+                canvas.Children.Remove(el);
+            }
+        }
+
+        private void DeleteModulesPinsAndConnections(List<Pin> pins)
+        {
+            foreach (Pin pin in pins)
+            {
+                foreach (PolylineTagData data in pin.ActiveConnections)
+                {
+                    Pin iopin;
+                    if (pin.Type == Types.IN)
+                    {
+                        iopin = (Pin)data.RecPinOut.Tag;
+                    } else
+                    {
+                        iopin = (Pin)data.RecPinIn.Tag;
+                    }
+                    
+                    Polyline poly = data.Polyline;
+                    Label label = (Label)poly.Tag;
+
+                    iopin.ActiveConnections.Remove(data);
+
+                    if (iopin.Type == Types.IN || iopin.ActiveConnections.Count == 0)
+                    {
+                        iopin.Connected = false;
+                        iopin.Name_wire = "";
+                    }
+                    canvas.Children.Remove(label);
+                    canvas.Children.Remove(poly);
+                }
+                canvas.Children.Remove(pin.Rectangle);
+            }
+        }
+
+        private static MessageBoxResult ShowQuestionDialog(string message, string title)
+        {
+            MessageBoxImage icon = MessageBoxImage.Question;
+            MessageBoxButton buttons = MessageBoxButton.YesNo;
+            MessageBoxResult result = MessageBox.Show(message, title, buttons, icon);
+            return result;
+        }
+
+        private void Module_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {            
             if (_isLineDrag || handToggle.IsChecked == false) return;
             EnableToggleButtons(true);
@@ -210,7 +243,7 @@ namespace CycloneStudio
             PinsRestoreLines(module.OutPins);
         }
 
-        private void rect_MouseMove(object sender, MouseEventArgs e)
+        private void Module_MouseMove(object sender, MouseEventArgs e)
         {
             if (!_isRectDragInProg) return;
             Grid el = (Grid)sender;
@@ -248,7 +281,7 @@ namespace CycloneStudio
             }
         }
 
-        private void ved_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void Pin_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (handToggle.IsChecked == false) return;
             if (_isLineDragDone)
@@ -328,7 +361,7 @@ namespace CycloneStudio
             Panel.SetZIndex(line, 100);            
         }
 
-        private void ved_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void Pin_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (!_isLineDrag || handToggle.IsChecked == false) return;
             _isLineDragDone = true;
@@ -468,20 +501,46 @@ namespace CycloneStudio
 
         }
 
-        private void menuItemClick(object sender, RoutedEventArgs e)
+        private void EventMouseOverLine(object sender, MouseEventArgs e)
         {
-            Console.WriteLine("jop");            
+            if (deleteToggle.IsChecked == true)
+            {
+                Polyline poly = (Polyline)sender;
+                if (!poly.IsHitTestVisible)
+                {
+                    return;
+                }
+                poly.StrokeThickness = 4;
+                poly.Stroke = Brushes.Red;
+                if (this.Cursor != Cursors.Wait)
+                    Mouse.OverrideCursor = Cursors.Cross;
+            }
         }
 
-        private void generateMenuItems()
+        private void EventMouseLeaveLine(object sender, MouseEventArgs e)
+        {
+            if (deleteToggle.IsChecked == true)
+            {
+                Polyline poly = (Polyline)sender;
+                poly.StrokeThickness = 2;
+                poly.Stroke = Brushes.Black;
+                if (this.Cursor != Cursors.Wait)
+                    Mouse.OverrideCursor = Cursors.Arrow;
+            }
+        }
+
+        private void GenerateMenuItems()
         {
             fileControler.GenerateMenuItems(mmMenu);           
         }
 
-        private void menuItemGenerateModule(object sender, RoutedEventArgs e)
+        private void MenuItemGenerateModule(object sender, RoutedEventArgs e)
         {
             MenuItem el = sender as MenuItem;
-            MenuData data = el.Tag as MenuData;           
+
+            DeactivateMenuItem(el);
+
+            MenuData data = el.Tag as MenuData;
 
             IEnumerable<string> inPins = data.InPins.Except(data.HiddenPins);
             IEnumerable<string> outPins = data.OutPins.Except(data.HiddenPins);
@@ -494,38 +553,71 @@ namespace CycloneStudio
             int count = 0;
 
             foreach (string pin in data.InPins)
-            {               
+            {
                 if (data.HiddenPins.Contains(pin))
-                {                    
+                {
                     module.InPins.Add(CreateHiddenPin(Types.IN, pin));
-                } else
+                }
+                else
                 {
                     module.InPins.Add(CreatePin(leftInMargin, topMargin + topMargin * count, Types.IN, pin));
-                    hlavni.Children.Add(CreateTextBlock(15, 15 + topMargin * (count++), pin));                    
+                    hlavni.Children.Add(CreateTextBlock(15, 15 + topMargin * (count++), pin));
                 }
-                
+
             }
 
             count = 0;
             foreach (string pin in data.OutPins)
-            {                
+            {
                 if (data.HiddenPins.Contains(pin))
-                {                    
+                {
                     module.OutPins.Add(CreateHiddenPin(Types.OUT, pin));
                 }
                 else
-                {                   
+                {
                     module.OutPins.Add(CreatePin(leftOutMargin, topMargin + topMargin * count, Types.OUT, pin));
                     hlavni.Children.Add(CreateTextBlock(90, 15 + topMargin * (count++), pin));
                 }
-                
-               
+
+
             }
 
             hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
-            hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));          
+            hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
 
-            
+
+        }
+
+        private void DeactivateMenuItem(MenuItem el)
+        {
+            if (el.Parent is MenuItem parent)
+            {
+                if (parent.Header as string == "io")
+                {
+                    unenabledItems.Add(el);
+                    el.IsEnabled = false;
+                }
+                //MenuItem parentOfParent = parent.Parent as MenuItem;
+                if (parent.Parent is MenuItem parentOfParent && (parentOfParent.Header as string) == "board")
+                {
+                    if (!boardChoosen)
+                    {
+                        boardChoosen = true;
+                        foreach (MenuItem item in parentOfParent.Items)
+                        {
+                            if (!item.Equals(parent))
+                            {
+                                item.IsEnabled = false;
+                                unenabledBoards.Add(item);
+                            }
+                        }
+                    }
+                    //unenabledItems.Add(el);
+                    el.IsEnabled = false;
+                    boardItem.Add(el);
+                }
+
+            }
         }
 
         private static TextBlock CreateTextBlock(int marginLeft, int marginTop, string text)
@@ -580,9 +672,9 @@ namespace CycloneStudio
 
             hlavni.MouseEnter += EventMouseOverGrid;
             hlavni.MouseLeave += EventMouseLeaveGrid;
-            hlavni.MouseLeftButtonDown += rect_MouseLeftButtonDown;
-            hlavni.MouseLeftButtonUp += rect_MouseLeftButtonUp;
-            hlavni.MouseMove += rect_MouseMove;
+            hlavni.MouseLeftButtonDown += Module_MouseLeftButtonDown;
+            hlavni.MouseLeftButtonUp += Module_MouseLeftButtonUp;
+            hlavni.MouseMove += Module_MouseMove;
 
             canvas.Children.Add(hlavni);
         }
@@ -650,7 +742,7 @@ namespace CycloneStudio
             highlighted.Clear();
         }
 
-        private void canvas_MouseMove(object sender, MouseEventArgs e)
+        private void Canvas_MouseMove(object sender, MouseEventArgs e)
         {           
             if (!_isLineDrag) return;           
 
@@ -669,7 +761,7 @@ namespace CycloneStudio
             }
         }
 
-        private void canvas_MouseUp(object sender, MouseEventArgs e)
+        private void Canvas_MouseUp(object sender, MouseEventArgs e)
         {            
             if (!_isLineDrag) return;
             if (!canvas.IsMouseDirectlyOver) return;
@@ -679,6 +771,33 @@ namespace CycloneStudio
             ChangePinHitVisibility(true);
             line = null;            
             rectFrom = null;
+        }
+
+        private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers != ModifierKeys.Control)
+                return;
+
+            double zoomMax = 2;
+            double zoomMin = 0.9999;
+            double zoomSpeed = 0.001;
+
+
+            zoom += zoomSpeed * e.Delta;
+            if (zoom < zoomMin) { zoom = zoomMin; }
+            if (zoom > zoomMax) { zoom = zoomMax; }
+
+            Point mousePos = e.GetPosition(canvas);
+
+            if (zoom > 1)
+            {
+                canvas.LayoutTransform = new ScaleTransform(zoom, zoom, mousePos.X, mousePos.Y);
+            }
+            else
+            {
+                canvas.LayoutTransform = new ScaleTransform(zoom, zoom);
+            }
+            e.Handled = true;
         }
 
         private Polyline GenerateLine(double startX, double startY, double endX, double endY, string name, PolylineTagData data)
@@ -698,7 +817,7 @@ namespace CycloneStudio
                 StrokeThickness = 2,
                 Effect = GetShadowEffect()
             };
-            polyline.MouseLeftButtonUp += poly_MouseLeftButtonUp;
+            polyline.MouseLeftButtonUp += Poly_MouseLeftButtonUp;
             polyline.MouseEnter += EventMouseOverLine;
             polyline.MouseLeave += EventMouseLeaveLine;
             // Create a collection of points for a polyline  
@@ -734,120 +853,52 @@ namespace CycloneStudio
 
         }
 
-        private void poly_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void Poly_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (deleteToggle.IsChecked == false) return;
-            string message = "Do you want to delete this connection?";
-            string title = "Delete connection";
-            MessageBoxImage icon = MessageBoxImage.Question;
-            MessageBoxButton buttons = MessageBoxButton.YesNo;
-            MessageBoxResult result = MessageBox.Show(message, title, buttons, icon);
-            if (result == MessageBoxResult.Yes)
+            if (deleteToggle.IsChecked == true)
             {
-                Polyline poly = (Polyline)sender;
-                Label label = (Label)poly.Tag;
-                PolylineTagData data = (PolylineTagData)label.Tag;
-                Pin inPin = (Pin)data.RecPinIn.Tag;
-                Pin outPin = (Pin)data.RecPinOut.Tag;                
-
-                inPin.ActiveConnections.Remove(data);
-                inPin.Connected = false;
-                inPin.Name_wire = "";
-
-                outPin.ActiveConnections.Remove(data);
-                if (outPin.ActiveConnections.Count == 0)
+                MessageBoxResult result = ShowQuestionDialog("Do you want to delete this connection?", "Delete connection");
+                if (result == MessageBoxResult.Yes)
                 {
-                    outPin.Connected = false;
-                    outPin.Name_wire = "";
-                }
-                canvas.Children.Remove(label);
-                canvas.Children.Remove(poly);
-            }
-            else
-            {
-                return;
-            }
+                    Polyline poly = (Polyline)sender;
+                    Label label = (Label)poly.Tag;
+                    PolylineTagData data = (PolylineTagData)label.Tag;
+                    Pin inPin = (Pin)data.RecPinIn.Tag;
+                    Pin outPin = (Pin)data.RecPinOut.Tag;
+                    
+                    if (Int32.TryParse(inPin.Name_wire.Remove(0, 1), out int numValue))
+                    {
+                        if (numValue == wireId)
+                            wireId--;
+                    }
 
+                    inPin.ActiveConnections.Remove(data);
+                    inPin.Connected = false;
+                    inPin.Name_wire = "";
+
+                    outPin.ActiveConnections.Remove(data);
+                    if (outPin.ActiveConnections.Count == 0)
+                    {
+                        outPin.Connected = false;
+                        outPin.Name_wire = "";
+                    }
+                    canvas.Children.Remove(label);
+                    canvas.Children.Remove(poly);
+                }
+                else
+                {
+                    return;
+                }
+            }
             
         }       
-
-        private void EventMouseOverLine(object sender, MouseEventArgs e)
-        {
-            if (deleteToggle.IsChecked == false) return;
-            Polyline poly = (Polyline)sender;
-            if (!poly.IsHitTestVisible)
-            {
-                return;
-            }
-            poly.StrokeThickness = 4;
-            poly.Stroke = Brushes.Red;
-            if (this.Cursor != Cursors.Wait)
-                Mouse.OverrideCursor = Cursors.Cross;
-
-        }
-
-        private void EventMouseLeaveLine(object sender, MouseEventArgs e)
-        {
-            if (deleteToggle.IsChecked == false) return;
-            Polyline poly = (Polyline)sender;
-            poly.StrokeThickness = 2;
-            poly.Stroke = Brushes.Black;
-            if (this.Cursor != Cursors.Wait)
-                Mouse.OverrideCursor = Cursors.Arrow;
-
-        }
-
+        
         private void CalculateNewCoordinates(Rectangle rectangle, out double xOut, out double yOut)
         {
             double x = Canvas.GetLeft(rectangle);
             double y = Canvas.GetTop(rectangle);
             xOut = x + rectangle.Margin.Left + (rectangle.ActualWidth / 2);
             yOut = y + rectangle.Margin.Top + (rectangle.ActualHeight / 2);
-        }
-
-        private static DropShadowEffect GetShadowEffect()
-        {
-            return new DropShadowEffect
-            {
-                Color = Color.FromRgb(100, 100, 100),
-                Direction = 225,
-                ShadowDepth = 8,
-                BlurRadius = 5,
-                Opacity = 0.3
-            };
-        }        
-
-        private static LinearGradientBrush GetLinearGradientFill()
-        {
-            LinearGradientBrush myVerticalGradient = new LinearGradientBrush();
-            myVerticalGradient.StartPoint = new Point(0.5, 0);
-            myVerticalGradient.EndPoint = new Point(0.5, 1);
-            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 170, 255), 0.0));
-            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 170, 255), 0.2));
-            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 100, 255), 1.0));
-            return myVerticalGradient;
-        }
-
-        private static LinearGradientBrush GetLinearGradientFillPinIn()
-        {
-            LinearGradientBrush myVerticalGradient = new LinearGradientBrush();
-            myVerticalGradient.StartPoint = new Point(0, 0.5);
-            myVerticalGradient.EndPoint = new Point(1, 0.5);
-            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 186, 50), 0.0));
-            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 186, 50), 0.2));
-            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 131, 35), 1.0));
-            return myVerticalGradient;
-        }
-
-        private static LinearGradientBrush GetLinearGradientFillPinOut()
-        {
-            LinearGradientBrush myVerticalGradient = new LinearGradientBrush();
-            myVerticalGradient.StartPoint = new Point(1, 0.5);
-            myVerticalGradient.EndPoint = new Point(0, 0.5);
-            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(199, 199, 23), 0.0));
-            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(199, 199, 23), 0.2));
-            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(179, 179, 24), 1.0));
-            return myVerticalGradient;
         }
 
         private void Event_OpenProject(object sender, RoutedEventArgs e)
@@ -937,31 +988,49 @@ namespace CycloneStudio
             deleteToggle.IsEnabled = state;
         }
 
-        private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        private static DropShadowEffect GetShadowEffect()
         {
-            if (Keyboard.Modifiers != ModifierKeys.Control)
-                return;
-
-            double zoomMax = 2;
-            double zoomMin = 0.9999;
-            double zoomSpeed = 0.001;
-            
-
-            zoom += zoomSpeed * e.Delta; // Ajust zooming speed (e.Delta = Mouse spin value )
-            if (zoom < zoomMin) { zoom = zoomMin; } // Limit Min Scale
-            if (zoom > zoomMax) { zoom = zoomMax; } // Limit Max Scale
-
-            Point mousePos = e.GetPosition(canvas);
-
-            if (zoom > 1)
+            return new DropShadowEffect
             {
-                canvas.LayoutTransform = new ScaleTransform(zoom, zoom, mousePos.X, mousePos.Y); // transform Canvas size from mouse position
-            }
-            else
-            {                
-                canvas.LayoutTransform = new ScaleTransform(zoom, zoom); // transform Canvas size
-            }
-            e.Handled = true;
+                Color = Color.FromRgb(100, 100, 100),
+                Direction = 225,
+                ShadowDepth = 8,
+                BlurRadius = 5,
+                Opacity = 0.3
+            };
+        }
+
+        private static LinearGradientBrush GetLinearGradientFill()
+        {
+            LinearGradientBrush myVerticalGradient = new LinearGradientBrush();
+            myVerticalGradient.StartPoint = new Point(0.5, 0);
+            myVerticalGradient.EndPoint = new Point(0.5, 1);
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 170, 255), 0.0));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 170, 255), 0.2));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 100, 255), 1.0));
+            return myVerticalGradient;
+        }
+
+        private static LinearGradientBrush GetLinearGradientFillPinIn()
+        {
+            LinearGradientBrush myVerticalGradient = new LinearGradientBrush();
+            myVerticalGradient.StartPoint = new Point(0, 0.5);
+            myVerticalGradient.EndPoint = new Point(1, 0.5);
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 186, 50), 0.0));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 186, 50), 0.2));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 131, 35), 1.0));
+            return myVerticalGradient;
+        }
+
+        private static LinearGradientBrush GetLinearGradientFillPinOut()
+        {
+            LinearGradientBrush myVerticalGradient = new LinearGradientBrush();
+            myVerticalGradient.StartPoint = new Point(1, 0.5);
+            myVerticalGradient.EndPoint = new Point(0, 0.5);
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(199, 199, 23), 0.0));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(199, 199, 23), 0.2));
+            myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(179, 179, 24), 1.0));
+            return myVerticalGradient;
         }
 
     }

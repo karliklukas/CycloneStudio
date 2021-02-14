@@ -217,7 +217,8 @@ namespace CycloneStudio.structs
                     {
                         middlePart.Append("." + pin.Name + "(" + pin.Name + "),");
                         topPart.Append(inPrefix + pin.Name + ",");
-                        hiddenPart.Append(pin.Name + ",");
+                        if (!pin.CustomPin)
+                            hiddenPart.Append(pin.Name + ",");                        
                     }
                     else
                     {
@@ -232,7 +233,8 @@ namespace CycloneStudio.structs
                     {
                         middlePart.Append("." + pin.Name + "(" + pin.Name + "),");
                         topPart.Append(outPrefix + pin.Name + ",");
-                        hiddenPart.Append(pin.Name + ",");
+                        if (!pin.CustomPin)                        
+                            hiddenPart.Append(pin.Name + ",");                        
                     }
                     else
                     {
@@ -248,10 +250,10 @@ namespace CycloneStudio.structs
 
             topPart.Remove(topPart.Length - 1, 1);
             topPart.AppendLine(");");
-            topPart.AppendLine(hiddenPart.ToString());
 
             hiddenPart.Remove(hiddenPart.Length - 1, 1);
-            hiddenPart.Append("");
+            hiddenPart.AppendLine("");
+            topPart.AppendLine(hiddenPart.ToString());            
 
             topPart.Append("wire ");
             foreach (string wire in wires)
@@ -259,7 +261,7 @@ namespace CycloneStudio.structs
                 topPart.Append(wire + ",");
             }
             topPart.Remove(topPart.Length - 1, 1);            
-            topPart.AppendLine(";");
+            topPart.AppendLine(";\n");
 
             topPart.AppendLine(middlePart.ToString());
 
