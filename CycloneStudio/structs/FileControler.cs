@@ -83,7 +83,7 @@ namespace CycloneStudio.structs
 
         private MenuData ReadAndProcessFile(string path)
         {
-            MenuData data = new MenuData();//
+            MenuData data = new MenuData();
             string text = File.ReadAllText(path);
             string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\n\\s(]+)\\);");
             data.Name = textSplited[1].Remove(0, 1); ;
@@ -96,13 +96,11 @@ namespace CycloneStudio.structs
             {
                 if (pins[i].Contains("outputwire"))
                 {
-                    data.OutPins.Add(pins[i].Remove(0, 10));
-                    //Console.WriteLine("out "+pins[i].Remove(0, 10));
+                    data.OutPins.Add(pins[i].Remove(0, 10));                   
                 }
                 else if (pins[i].Contains("inputwire"))
                 {
-                    data.InPins.Add(pins[i].Remove(0, 9));
-                    //Console.WriteLine("in " + pins[i].Remove(0, 9));
+                    data.InPins.Add(pins[i].Remove(0, 9));                    
                 }
             }
 
@@ -191,9 +189,7 @@ namespace CycloneStudio.structs
         }
 
         public bool BuildVerilogForProject(List<Rectangle> modules, string name)
-        {           
-            List<string> inPins = new List<string>();
-            List<string> outPins = new List<string>();
+        {               
             HashSet<string> wires = new HashSet<string>();
 
             StringBuilder middlePart = new StringBuilder();
@@ -204,48 +200,21 @@ namespace CycloneStudio.structs
             string outPrefix = "output wire ";
             topPart.Append("module " + name + "(");
             hiddenPart.Append("//hidden ");
+
             foreach (var rec in modules)
             {
-                Module module = rec.Tag as Module;                
+                Module module = rec.Tag as Module;
 
                 middlePart.Append("c" + module.Name + " ");
                 middlePart.Append(module.Id + "(");
 
-                foreach (Pin pin in module.InPins)
-                {
-                    if (pin.Hidden)
-                    {
-                        middlePart.Append("." + pin.Name + "(" + pin.Name + "),");
-                        topPart.Append(inPrefix + pin.Name + ",");
-                        if (!pin.CustomPin)
-                            hiddenPart.Append(pin.Name + ",");                        
-                    }
-                    else
-                    {
-                        middlePart.Append("." + pin.Name + "(" + pin.Name_wire + "),");
-                        wires.Add(pin.Name_wire);
-                    }
-                    
-                }
-                foreach (Pin pin in module.OutPins)
-                {
-                    if (pin.Hidden)
-                    {
-                        middlePart.Append("." + pin.Name + "(" + pin.Name + "),");
-                        topPart.Append(outPrefix + pin.Name + ",");
-                        if (!pin.CustomPin)                        
-                            hiddenPart.Append(pin.Name + ",");                        
-                    }
-                    else
-                    {
-                        middlePart.Append("." + pin.Name + "(" + pin.Name_wire + "),");
-                        wires.Add(pin.Name_wire);
-                    }
-                }
+                ProcessPinsToVerilog(module.InPins, wires, middlePart, topPart, hiddenPart, inPrefix, module);
+                ProcessPinsToVerilog(module.OutPins, wires, middlePart, topPart, hiddenPart, outPrefix, module);
+               
                 middlePart.Remove(middlePart.Length - 1, 1);
                 middlePart.AppendLine(");");
 
-            }           
+            }
             middlePart.AppendLine("\nendmodule");
 
             topPart.Remove(topPart.Length - 1, 1);
@@ -256,6 +225,7 @@ namespace CycloneStudio.structs
             topPart.AppendLine(hiddenPart.ToString());            
 
             topPart.Append("wire ");
+
             foreach (string wire in wires)
             {
                 topPart.Append(wire + ",");
@@ -267,6 +237,27 @@ namespace CycloneStudio.structs
 
             Console.WriteLine(topPart.ToString());
             return false;
+        }
+
+        private void ProcessPinsToVerilog(List<Pin> pins, HashSet<string> wires, StringBuilder middlePart, StringBuilder topPart, StringBuilder hiddenPart, string inPrefix, Module module)
+        {
+            foreach (Pin pin in pins)
+            {
+                if (pin.Hidden)
+                {
+                    middlePart.Append("." + pin.Name + "(" + pin.Name + "),");
+                    topPart.Append(inPrefix + pin.Name + ",");
+                    if (!pin.CustomPin)
+                        hiddenPart.Append(pin.Name + ",");
+                }
+                else
+                {
+                    middlePart.Append("." + pin.Name + "(" + pin.Name_wire + "),");
+                    if (pin.Name_wire != "")
+                        wires.Add(pin.Name_wire);
+                }
+
+            }
         }
     }
 }

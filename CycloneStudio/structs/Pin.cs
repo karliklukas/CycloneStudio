@@ -36,6 +36,7 @@ namespace CycloneStudio.structs
         public Pin()
         {
             activeConnections = new List<PolylineTagData>();
+            name_wire = "";
         }
 
         public bool CompareConnections(Rectangle endPin)

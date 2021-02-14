@@ -8,9 +8,10 @@
         Title="Project name" Height="160" Width="300" ResizeMode="NoResize" Icon="graphics/icon.ico" WindowStyle="ToolWindow">
     <Grid>
         <Label Content="Enter project name:" HorizontalAlignment="Left" Margin="72,10,0,0" VerticalAlignment="Top" Width="122" FontWeight="Bold"/>
-        <TextBox x:Name="textBoxName" HorizontalAlignment="Left" Height="23" Margin="78,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="197"/>
-        <Button Content="OK" HorizontalAlignment="Left" Margin="55,91,0,0" VerticalAlignment="Top" Width="75" Click="OKButton_Click"/>
-        <Button Content="Cancel" HorizontalAlignment="Left" Margin="157,91,0,0" VerticalAlignment="Top" Width="75" Click="CancelButton_Click"/>
+        <TextBox x:Name="textBoxName" HorizontalAlignment="Left" Height="23" Margin="78,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="197" TextChanged="textChangedEventHandler"/>
+        <Button x:Name="okButton" Content="OK" HorizontalAlignment="Left" Margin="55,91,0,0" VerticalAlignment="Top" Width="75" Click="OKButton_Click" IsEnabled="False"/>
+        <Button Content="Cancel" HorizontalAlignment="Left" Margin="157,91,0,0" VerticalAlignment="Top" Width="75" IsCancel="True"/>
         <Image HorizontalAlignment="Left" Height="53" Margin="10,22,0,0" VerticalAlignment="Top" Width="54" Source="graphics/save.png"/>
+        <Label Content="Minimal length 5 characters" HorizontalAlignment="Left" Margin="74,59,0,0" VerticalAlignment="Top" Width="116" FontSize="8"/>
     </Grid>
 </Window>

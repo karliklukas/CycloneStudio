@@ -32,13 +32,20 @@ namespace CycloneStudio
         }
 
         private void OKButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = true;
-        }
+        {           
+            DialogResult = true;                      
+        }        
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        private void textChangedEventHandler(object sender, TextChangedEventArgs e)
         {
-            DialogResult = false;
+            if (textBoxName.Text.Length < 5)
+            {
+                okButton.IsEnabled = false;
+            }
+            else
+            {
+                okButton.IsEnabled = true;
+            }
         }
     }
 }
