@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace CycloneStudio.structs
 {
+    [Serializable()]
     class MenuData
     {
         private string filePath;

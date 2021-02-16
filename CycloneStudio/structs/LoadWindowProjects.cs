@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace CycloneStudio.structs
 {
+
     class LoadWindowProjects
     {      
         public string Name { get; set; }

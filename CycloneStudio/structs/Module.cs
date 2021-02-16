@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 
 namespace CycloneStudio.structs
 {
+    [Serializable]
     class Module
     {
         private string name;
         private string id;
         private string path;
+        private double marginLeft;
+        private double marginTop;
         private List<Pin> inPins;
         private List<Pin> outPins;
 
@@ -19,6 +22,8 @@ namespace CycloneStudio.structs
         public string Path { get => path; set => path = value; }
         public List<Pin> InPins { get => inPins; set => inPins = value; }
         public List<Pin> OutPins { get => outPins; set => outPins = value; }
+        public double MarginLeft { get => marginLeft; set => marginLeft = value; }
+        public double MarginTop { get => marginTop; set => marginTop = value; }
 
         public Module()
         {

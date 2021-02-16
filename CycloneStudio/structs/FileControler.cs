@@ -13,6 +13,7 @@ using System.ComponentModel;
 
 namespace CycloneStudio.structs
 {
+    [Serializable()]
     class FileControler
     {
         private readonly RoutedEventHandler eventHandler;

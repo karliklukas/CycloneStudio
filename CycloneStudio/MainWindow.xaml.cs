@@ -15,6 +15,9 @@ using System.Windows.Shapes;
 using System.IO;
 using System.Windows.Media.Effects;
 using CycloneStudio.structs;
+using Microsoft.Win32;
+using System.Runtime.Serialization;
+using System.Xml;
 
 namespace CycloneStudio
 {
@@ -23,10 +26,14 @@ namespace CycloneStudio
     /// </summary>
     public partial class MainWindow : Window
     {
+        private const int PINSIZE = 20;
+        private const int MODULEWIDHT = 120;
         private bool _isRectDragInProg = false;
         private bool _isLineDrag = false;
         private bool _isLineDragDone = false;
         private bool boardChoosen = false;
+        private bool isProject = false;
+        private bool isBlock = false;
         private int moduleId;
         private int wireId;
         private Double zoom = 1;
@@ -77,11 +84,16 @@ namespace CycloneStudio
             entryWindow.Owner = this;
             if (entryWindow.ShowDialog() == true)
             {
-                string path = entryWindow.Path;
-                /*if (!projectWindow.Confirm)
+                if (entryWindow.Confirm)
                 {
-                    
-                }*/
+                    ClearAll(true, false);
+                }
+                else
+                {
+                    ClearAll(true, false);
+                    string path = entryWindow.Path;
+                    //TODO
+                }
             }
             else
             {
@@ -139,28 +151,7 @@ namespace CycloneStudio
                 Grid el = (Grid)sender;
                 Rectangle rec = (Rectangle)el.Tag;
                 Module module = (Module)rec.Tag;
-
-                MenuItem it = unenabledItems.Find(item => item.Header as string == module.Name);
-                if (it != null)
-                {
-                    unenabledItems.Remove(it);
-                    it.IsEnabled = true;
-                }
-
-                it = boardItem.Find(item => item.Header as string == module.Name);
-                if (it != null)
-                {
-                    boardItem.Remove(it);
-                    it.IsEnabled = true;
-                    if (boardItem.Count == 0)
-                    {
-                        foreach (var item in unenabledBoards)
-                        {
-                            item.IsEnabled = true;
-                        }
-                        unenabledBoards.Clear();
-                    }
-                }
+                ActivateMenuItem(module.Name);
 
                 DeleteModulesPinsAndConnections(module.InPins);
                 DeleteModulesPinsAndConnections(module.OutPins);
@@ -173,6 +164,31 @@ namespace CycloneStudio
 
                 modules.Remove(rec);
                 canvas.Children.Remove(el);
+            }
+        }
+
+        private void ActivateMenuItem(string name)
+        {
+            MenuItem it = unenabledItems.Find(item => item.Header as string == name);
+            if (it != null)
+            {
+                unenabledItems.Remove(it);
+                it.IsEnabled = true;
+            }
+
+            it = boardItem.Find(item => item.Header as string == name);
+            if (it != null)
+            {
+                boardItem.Remove(it);
+                it.IsEnabled = true;
+                if (boardItem.Count == 0)
+                {
+                    foreach (var item in unenabledBoards)
+                    {
+                        item.IsEnabled = true;
+                    }
+                    unenabledBoards.Clear();
+                }
             }
         }
 
@@ -249,6 +265,8 @@ namespace CycloneStudio
             Canvas.SetTop(el, top);
 
             Module module = (Module)rec.Tag;
+            module.MarginLeft = left;
+            module.MarginTop = top;
 
             MovePinsOnModuleMove(left, top, module.InPins);
             MovePinsOnModuleMove(left, top, module.OutPins);
@@ -266,7 +284,7 @@ namespace CycloneStudio
                         CalculateNewCoordinates(p.RecPinIn, out double xs, out double ys);
                         CalculateNewCoordinates(p.RecPinOut, out double xe, out double ye);
 
-                        p.Polyline = GenerateLine(xs, ys, xe, ye, p.Id, p);
+                        p.Polyline = GenerateLine(xs, ys, xe, ye, p.Wirename, p);
                     }
                 }
             }
@@ -373,11 +391,16 @@ namespace CycloneStudio
 
             Pin pinFrom = (Pin)rectFrom.Tag;
             Pin pinTo = (Pin)rectTo.Tag;
+            CreateConnection(pinFrom, pinTo, rectFrom, rectTo);
+        }
+
+        private void CreateConnection(Pin pinFrom, Pin pinTo, Rectangle rFrom, Rectangle rTo)
+        {
             PolylineTagData data = new PolylineTagData();
 
-            string wireName = FindInOutPinsAndGenName(pinFrom, pinTo, data);
+            string wireName = FindInOutPinsAndGenName(pinFrom, pinTo, rFrom, rTo, data);
 
-            data.Id = wireName;
+            data.Wirename = wireName;
             data.Polyline = GenerateLine(line.X1, line.Y1, line.X2, line.Y2, wireName, data);
 
             pinFrom.Connected = true;
@@ -395,14 +418,14 @@ namespace CycloneStudio
             rectTo = null;
         }
 
-        private string FindInOutPinsAndGenName(Pin pinFrom, Pin pinTo, PolylineTagData data)
+        private string FindInOutPinsAndGenName(Pin pinFrom, Pin pinTo, Rectangle rFrom, Rectangle rTo, PolylineTagData data)
         {
             string wireName = "e";
 
             if (pinFrom.Type == Types.IN)
             {
-                data.RecPinIn = rectFrom;
-                data.RecPinOut = rectTo;
+                data.RecPinIn = rFrom;
+                data.RecPinOut = rTo;
                 if (pinTo.Connected)
                 {
                     wireName = pinTo.Name_wire;
@@ -410,8 +433,8 @@ namespace CycloneStudio
             }
             else
             {
-                data.RecPinIn = rectTo;
-                data.RecPinOut = rectFrom;
+                data.RecPinIn = rTo;
+                data.RecPinOut = rFrom;
                 if (pinFrom.Connected)
                 {
                     wireName = pinFrom.Name_wire;
@@ -568,11 +591,11 @@ namespace CycloneStudio
                 Pin createdPin;
                 if (hiddenPins.Contains(pinName))
                 {
-                    createdPin = CreateHiddenPin(pinType, pinName);
+                    createdPin = CreateHiddenPin(pinType, pinName, module.Id);
                 }
                 else
                 {
-                    createdPin = CreatePin(leftMarginPin, topMargin + topMargin * count, pinType, pinName);
+                    createdPin = CreatePin(leftMarginPin, topMargin + topMargin * count, pinType, pinName, module.Id, 50, 0);
                     hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName));
                 }
 
@@ -636,12 +659,14 @@ namespace CycloneStudio
             {
                 Id = "b" + (++moduleId),
                 Name = data.Name,
-                Path = data.FilePath
+                Path = data.FilePath,
+                MarginLeft = 0,
+                MarginTop = 0
             };
             Rectangle g = new Rectangle
             {
                 Margin = new Thickness(0, 0, 0, 0),
-                Width = 120,
+                Width = MODULEWIDHT,
                 Height = height,
                 RadiusX = 5,
                 RadiusY = 5,
@@ -655,7 +680,7 @@ namespace CycloneStudio
             hlavni = new Grid
             {
                 Margin = new Thickness(20, 20, 0, 0),
-                Width = 120,
+                Width = MODULEWIDHT,
                 Height = height,
                 Background = Brushes.Transparent,
                 Tag = g,
@@ -678,13 +703,13 @@ namespace CycloneStudio
             canvas.Children.Add(hlavni);
         }
 
-        private Pin CreatePin(int MarginLeft, int MarginTop, Types pinType, string name)
+        private Pin CreatePin(int MarginLeft, int MarginTop, Types pinType, string name, string id, double marginLeft, double marginTop)
         {
             Rectangle rectangle = new Rectangle
             {
                 Margin = new Thickness(MarginLeft, MarginTop, 0, 0),
-                Width = 20,
-                Height = 20,
+                Width = PINSIZE,
+                Height = PINSIZE,
                 RadiusX = 2,
                 RadiusY = 2,
                 Fill = pinType == Types.OUT ? GetLinearGradientFillPinOut() : GetLinearGradientFillPinIn(),
@@ -699,11 +724,12 @@ namespace CycloneStudio
                 Hidden = false,
                 Name = name,
                 Type = pinType,
-                Rectangle = rectangle
+                Rectangle = rectangle,
+                ModuleId = id
             };
 
-            Canvas.SetTop(rectangle, 0);
-            Canvas.SetLeft(rectangle, 50);
+            Canvas.SetTop(rectangle, marginTop);
+            Canvas.SetLeft(rectangle, marginLeft);
             Panel.SetZIndex(rectangle, 2);
             SetPinEvents(rectangle);
             rectangle.Tag = pin;
@@ -712,7 +738,7 @@ namespace CycloneStudio
             return pin;
         }
 
-        private Pin CreateHiddenPin(Types pinType, string name)
+        private Pin CreateHiddenPin(Types pinType, string name, string id)
         {
             Rectangle rectangle = new Rectangle();
 
@@ -722,7 +748,8 @@ namespace CycloneStudio
                 Hidden = true,
                 Name = name,
                 Type = pinType,
-                Rectangle = rectangle
+                Rectangle = rectangle,
+                ModuleId = id
             };
             return pin;
         }
@@ -826,7 +853,7 @@ namespace CycloneStudio
             Point Point3 = new Point(startX + (distance / 2), startY);
             Point Point4 = new Point(startX + (distance / 2), endY);
             Point Point5 = new Point(endX - 10, endY);
-
+            
             PointCollection polygonPoints = new PointCollection
             {
                 Point1,
@@ -896,9 +923,9 @@ namespace CycloneStudio
         private void CalculateNewCoordinates(Rectangle rectangle, out double xOut, out double yOut)
         {
             double x = Canvas.GetLeft(rectangle);
-            double y = Canvas.GetTop(rectangle);
-            xOut = x + rectangle.Margin.Left + (rectangle.ActualWidth / 2);
-            yOut = y + rectangle.Margin.Top + (rectangle.ActualHeight / 2);
+            double y = Canvas.GetTop(rectangle);            
+            xOut = x + rectangle.Margin.Left + (PINSIZE / 2);
+            yOut = y + rectangle.Margin.Top + (PINSIZE / 2);            
         }
 
         private void Event_OpenProject(object sender, RoutedEventArgs e)
@@ -907,16 +934,14 @@ namespace CycloneStudio
             entryWindow.Owner = this;
             if (entryWindow.ShowDialog() == true)
             {
+
                 if (entryWindow.Confirm)
                 {
-                    canvas.Children.Clear();
-                    modules.Clear();
-                    moduleId = 0;
-                    wireId = 0;
-                    //TODO
+                    ClearAll(true, false);
                 }
                 else
                 {
+                    ClearAll(true, false);
                     string path = entryWindow.Path;
                     //TODO
                 }
@@ -925,7 +950,7 @@ namespace CycloneStudio
 
         private void Event_NewProject(object sender, RoutedEventArgs e)
         {
-
+            ClearAll(true, false);
         }
 
         private void Event_SaveProject(object sender, RoutedEventArgs e)
@@ -939,17 +964,227 @@ namespace CycloneStudio
 
         private void Event_OpenBlock(object sender, RoutedEventArgs e)
         {
+            isBlock = true;
+            isProject = false;
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "XML (*.xml)|*.xml";
+            if (openFileDialog.ShowDialog() == true)
+            {
+                SaveDataContainer container;
+
+                using (FileStream fs = new FileStream(openFileDialog.FileName, FileMode.Open))
+                {
+                    XmlDictionaryReader reader = XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas());
+                    DataContractSerializer ser = new DataContractSerializer(typeof(SaveDataContainer));
+                    container = (SaveDataContainer)ser.ReadObject(reader, true);
+                    reader.Close();
+                }
+                RenderCanvasFromFile(container);
+            }
+        }
+
+        private void RenderCanvasFromFile(SaveDataContainer container)
+        {
+            moduleId = container.ModuleId;
+            wireId = container.WireId;
+            ClearAll(false, false);
+
+            
+            List<Pin> activeOutPins = new List<Pin>();
+
+            foreach (Module item in container.Modules)
+            {
+                int inPins = item.InPins.FindAll(pin => pin.Hidden == false).Count();
+                List<Pin> outPinsList = item.OutPins.FindAll(pin => pin.Hidden == false);
+                int outPins = outPinsList.Count();
+
+                activeOutPins.AddRange(outPinsList.FindAll(pin => pin.Connected == true));
+
+                int pinsCount = Math.Max(inPins, outPins);
+                CreateModuleFromSave(item, out Module module, out Grid hlavni, 10 + pinsCount * 30);
+
+                CreatePinsFromListSave(item.InPins, module, hlavni, 10, 15, Types.IN);
+                CreatePinsFromListSave(item.OutPins, module, hlavni, 130, 90, Types.OUT);
+
+                hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
+                hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
+            }
+
+            RestoreConnectionsFromSave(activeOutPins);
+        }
+
+        private void ClearAll(bool proj, bool block)
+        {
+            canvas.Children.Clear();
+            modules.Clear();
+            boardChoosen = false;
+            isProject = proj;
+            isBlock = block;
+            unenabledBoards.Clear();
+            boardItem.Clear();
+            unenabledItems.Clear();
+            moduleId = 0;
+            wireId = 0;
+
+            int count = mmMenu.Items.Count;
+            for (int i = 3; i < count; i++)
+            {
+                mmMenu.Items.RemoveAt(3);
+            }
+            fileControler.GenerateMenuItems(mmMenu);            
+            MenuItem item =  mmMenu.Items[7] as MenuItem;
+            ((MenuItem)item.Items[0]).IsEnabled = isBlock;
+            ((MenuItem)item.Items[1]).IsEnabled = isBlock;
+            
 
         }
 
-        private void Event_SaveBlock(object sender, RoutedEventArgs e)
+        private void RestoreConnectionsFromSave(List<Pin> activeOutPins)
         {
+            foreach (Pin item in activeOutPins)
+            {
+                foreach (PolylineTagData oldData in item.ActiveConnections)
+                {
+                    Rectangle recIn = modules.Find(rec => ((Module)rec.Tag).Id == oldData.ModuleInId);
+                    Rectangle recOut = modules.Find(rec => ((Module)rec.Tag).Id == oldData.ModuleOutId);
+
+                    Module moduleIn = recIn.Tag as Module;
+                    Module moduleOut = recOut.Tag as Module;
+
+                    Pin pinIn = moduleIn.InPins.Find(pin => pin.Name == oldData.PinInName);
+                    Pin pinOut = moduleOut.OutPins.Find(pin => pin.Name == oldData.PinOutName);
+
+                    PolylineTagData data = new PolylineTagData();
+                    data.RecPinIn = pinIn.Rectangle;
+                    data.RecPinOut = pinOut.Rectangle;
+
+                    CalculateNewCoordinates(pinIn.Rectangle, out double x, out double y);
+                    CalculateNewCoordinates(pinOut.Rectangle, out double x1, out double y1);
+
+                    data.Wirename = oldData.Wirename;
+                    data.Polyline = GenerateLine(x, y, x1, y1, oldData.Wirename, data);
+
+                    pinOut.Connected = true;
+                    pinOut.Name_wire = oldData.Wirename;
+                    pinOut.ActiveConnections.Add(data);
+                    pinIn.Connected = true;
+                    pinIn.Name_wire = oldData.Wirename;
+                    pinIn.ActiveConnections.Add(data);
+
+                    Panel.SetZIndex(data.Polyline, 0);
+                }
+            }
+        }
+
+        private void CreateModuleFromSave(Module moduleSaved,out Module module, out Grid hlavni, int height)
+        {
+           module = new Module
+            {
+                Id = moduleSaved.Id,
+                Name = moduleSaved.Name,
+                Path = moduleSaved.Path,
+                MarginLeft = moduleSaved.MarginLeft,
+                MarginTop = moduleSaved.MarginTop
+            };
+            Rectangle g = new Rectangle
+            {
+                Margin = new Thickness(0, 0, 0, 0),
+                Width = MODULEWIDHT,
+                Height = height,
+                RadiusX = 5,
+                RadiusY = 5,
+                Fill = GetLinearGradientFill(),
+                Stroke = Brushes.Red,
+                StrokeThickness = 0,
+                Tag = module,
+                Effect = GetShadowEffect()
+
+            };
+            hlavni = new Grid
+            {
+                Margin = new Thickness(20, 20, 0, 0),
+                Width = MODULEWIDHT,
+                Height = height,
+                Background = Brushes.Transparent,
+                Tag = g,
+                Effect = GetShadowEffect()
+            };
+            Canvas.SetLeft(hlavni, module.MarginLeft);
+            Canvas.SetTop(hlavni, module.MarginTop);
+
+            Panel.SetZIndex(hlavni, 1);
+
+            hlavni.Children.Add(g);
+            modules.Add(g);
+
+            hlavni.MouseEnter += EventMouseOverGrid;
+            hlavni.MouseLeave += EventMouseLeaveGrid;
+            hlavni.MouseLeftButtonDown += Module_MouseLeftButtonDown;
+            hlavni.MouseLeftButtonUp += Module_MouseLeftButtonUp;
+            hlavni.MouseMove += Module_MouseMove;
+
+            canvas.Children.Add(hlavni);
+        }
+
+        private void CreatePinsFromListSave(List<Pin> pinsList, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, Types pinType)
+        {
+            int topMargin = 30;
+            int count = 0;
+
+            foreach (Pin pinName in pinsList)
+            {
+                Pin createdPin;
+                if (pinName.Hidden)
+                {
+                    createdPin = CreateHiddenPin(pinType, pinName.Name, module.Id);
+                }
+                else
+                {
+                    createdPin = CreatePin(leftMarginPin, topMargin + topMargin * count, pinType, pinName.Name, module.Id, module.MarginLeft, module.MarginTop);
+                    hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName.Name));
+                }
+
+                if (pinType == Types.IN)
+                {
+                    module.InPins.Add(createdPin);
+                }
+                else if (pinType == Types.OUT)
+                {
+                    module.OutPins.Add(createdPin);
+                }
+            }
+        }
+
+        private void Event_SaveBlock(object sender, RoutedEventArgs e)
+        {  
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.DefaultExt = ".xml";
+            dlg.Filter = "XML (*.xml)|*.xml";
+            Nullable<bool> result = dlg.ShowDialog();
+            if (result.Value != true) return;
+
+
+            SaveDataContainer container = new SaveDataContainer();
+            container.ModuleId = moduleId;
+            container.WireId = wireId;
+
+            foreach (Rectangle item in modules)
+            {
+                Module m = item.Tag as Module;
+                container.Modules.Add(m);
+            }            
+
+            using (FileStream writer = new FileStream(dlg.FileName, FileMode.Create))
+            {
+                DataContractSerializer ser = new DataContractSerializer(typeof(SaveDataContainer));
+                ser.WriteObject(writer, container);
+            }           
 
         }
 
         private void Event_NewBlock(object sender, RoutedEventArgs e)
         {
-
+            ClearAll(false, true);
         }
 
         private void Event_Build(object sender, RoutedEventArgs e)
@@ -965,6 +1200,26 @@ namespace CycloneStudio
         private void Event_Upload(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void Event_SaveAsImage(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.DefaultExt = ".png";
+            dlg.Filter = "PNG (*.png)|*.png";
+            Nullable<bool> result = dlg.ShowDialog();
+            if (result.Value != true) return;
+
+            RenderTargetBitmap rtb = new RenderTargetBitmap((int)this.ActualWidth, (int)this.ActualHeight - 50, 96d, 96d, PixelFormats.Default);
+            rtb.Render(canvas);           
+
+            BitmapEncoder pngEncoder = new PngBitmapEncoder();
+            pngEncoder.Frames.Add(BitmapFrame.Create(rtb));
+
+            using (var fs = File.OpenWrite(dlg.FileName))
+            {
+                pngEncoder.Save(fs);
+            }
         }
 
         private void HandToggleChecked(object sender, RoutedEventArgs e)
@@ -1034,7 +1289,7 @@ namespace CycloneStudio
             myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 131, 35), 1.0));
             return myVerticalGradient;
         }
-
+        
         private static LinearGradientBrush GetLinearGradientFillPinOut()
         {
             LinearGradientBrush myVerticalGradient = new LinearGradientBrush();

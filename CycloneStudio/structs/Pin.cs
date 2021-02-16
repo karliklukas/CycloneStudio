@@ -7,12 +7,13 @@ using System.Windows.Shapes;
 
 namespace CycloneStudio.structs
 {
+    [Serializable]
     enum Types
     {
         IN,
         OUT        
     }
-
+    [Serializable]
     class Pin
     {
         private Types type;        
@@ -22,6 +23,8 @@ namespace CycloneStudio.structs
         private bool hidden;
         private bool customPin;
         private List<PolylineTagData> activeConnections;
+        private string moduleId;
+        [NonSerialized]
         private Rectangle rectangle;
 
         public Types Type { get => type; set => type = value; }
@@ -31,6 +34,7 @@ namespace CycloneStudio.structs
         public bool Hidden { get => hidden; set => hidden = value; }
         public bool CustomPin { get => customPin; set => customPin = value; }
         public List<PolylineTagData> ActiveConnections { get => activeConnections; set => activeConnections = value; }
+        public string ModuleId { get => moduleId; set => moduleId = value; }
         public Rectangle Rectangle { get => rectangle; set => rectangle = value; }
 
         public Pin()

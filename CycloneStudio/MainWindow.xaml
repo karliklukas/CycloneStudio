@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:CycloneStudio"        
         mc:Ignorable="d"
         Icon="./graphics/icon.ico"
-        Title="Cyclone Studio v0.05" Height="550" Width="1000">
+        Title="Cyclone Studio v0.10" Height="550" Width="1000">
     <Window.Resources>
         <LinearGradientBrush x:Key="NormalBrush" StartPoint="0,0" EndPoint="0,1">
             <GradientBrush.GradientStops>
@@ -72,9 +72,12 @@
                 <MenuItem Header="Open project" Click="Event_OpenProject" />
                 <MenuItem Header="New project" Click="Event_NewProject" />
                 <MenuItem Header="Save project" Click="Event_SaveProject" />
+                <Separator/>
                 <MenuItem Header="Open block" Click="Event_OpenBlock" />
                 <MenuItem Header="New block" Click="Event_NewBlock"/>
                 <MenuItem Header="Save block" Click="Event_SaveBlock"/>
+                <Separator/>
+                <MenuItem Header="Save as image" Click="Event_SaveAsImage"/>
             </MenuItem>
             <MenuItem Header="Build" Height="30" Width="50" Click="Event_Build"/>
             <MenuItem Header="Upload" Height="30" Width="60" Click="Event_Upload"/>

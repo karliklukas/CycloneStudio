@@ -52,6 +52,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -82,6 +83,7 @@
     <Compile Include="structs\Pin.cs" />
     <Compile Include="structs\PolylineTagData.cs" />
     <Compile Include="structs\FileControler.cs" />
+    <Compile Include="structs\SaveDataContainer.cs" />
     <Page Include="EntryWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -134,6 +136,75 @@
     <None Include="components\block\BCD_decoder\cvystup_e.v" />
     <None Include="components\block\BCD_decoder\cvystup_f.v" />
     <None Include="components\block\BCD_decoder\cvystup_g.v" />
+    <None Include="components\board\DE0-Nano\cCLK_50MHz.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN11.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN12.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN13.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN14.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN15.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN16.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN17.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN18.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN19.v" />
+    <None Include="components\board\DE0-Nano\cIN_PIN20.v" />
+    <None Include="components\board\DE0-Nano\cKEY0.v" />
+    <None Include="components\board\DE0-Nano\cKEY1.v" />
+    <None Include="components\board\DE0-Nano\cLED0.v" />
+    <None Include="components\board\DE0-Nano\cLED1.v" />
+    <None Include="components\board\DE0-Nano\cLED2.v" />
+    <None Include="components\board\DE0-Nano\cLED3.v" />
+    <None Include="components\board\DE0-Nano\cLED4.v" />
+    <None Include="components\board\DE0-Nano\cLED5.v" />
+    <None Include="components\board\DE0-Nano\cLED6.v" />
+    <None Include="components\board\DE0-Nano\cLED7.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN11.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN12.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN13.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN14.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN15.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN16.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN17.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN18.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN19.v" />
+    <None Include="components\board\DE0-Nano\cOUT_PIN20.v" />
+    <None Include="components\board\DE0-Nano\cSWITCH.v" />
+    <None Include="components\board\DE0-Nano\DE0Nano.qsf" />
+    <None Include="components\board\StormIV-E6\cBeeper.v" />
+    <None Include="components\board\StormIV-E6\cCLK_50MHz.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN11.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN12.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN13.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN14.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN15.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN16.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN17.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN18.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN19.v" />
+    <None Include="components\board\StormIV-E6\cIN_PIN20.v" />
+    <None Include="components\board\StormIV-E6\cKEY1.v" />
+    <None Include="components\board\StormIV-E6\cKEY2.v" />
+    <None Include="components\board\StormIV-E6\cKEY3.v" />
+    <None Include="components\board\StormIV-E6\cKEY4.v" />
+    <None Include="components\board\StormIV-E6\cKEYreset.v" />
+    <None Include="components\board\StormIV-E6\cLED1.v" />
+    <None Include="components\board\StormIV-E6\cLED2.v" />
+    <None Include="components\board\StormIV-E6\cLED3.v" />
+    <None Include="components\board\StormIV-E6\cLED4.v" />
+    <None Include="components\board\StormIV-E6\cLED5.v" />
+    <None Include="components\board\StormIV-E6\cLED6.v" />
+    <None Include="components\board\StormIV-E6\cLED7.v" />
+    <None Include="components\board\StormIV-E6\cLED8.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN11.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN12.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN13.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN14.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN15.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN16.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN17.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN18.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN19.v" />
+    <None Include="components\board\StormIV-E6\cOUT_PIN20.v" />
+    <None Include="components\board\StormIV-E6\cSWITCH.v" />
     <None Include="components\io\cIN_PIN.v" />
     <None Include="components\io\cIN_PIN1.v" />
     <None Include="components\io\cIN_PIN10.v" />
@@ -180,8 +251,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="components\comb\" />
-    <Folder Include="components\kits\DE0-Nano\" />
-    <Folder Include="components\kits\StormIV-E6\" />
     <Folder Include="components\sec\" />
   </ItemGroup>
   <ItemGroup>
