@@ -10,10 +10,11 @@ using System.Windows;
 using System.Windows.Shapes;
 using System.Windows.Media;
 using System.ComponentModel;
+using System.Runtime.Serialization;
+using System.Xml;
 
 namespace CycloneStudio.structs
-{
-    [Serializable()]
+{    
     class FileControler
     {
         private readonly RoutedEventHandler eventHandler;
@@ -87,8 +88,25 @@ namespace CycloneStudio.structs
             MenuData data = new MenuData();
             string text = File.ReadAllText(path);
             string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\n\\s(]+)\\);");
-            data.Name = textSplited[1].Remove(0, 1); ;
-            data.FilePath = path;
+            data.Name = textSplited[1].Remove(0, 1);
+
+            DirectoryInfo directory = new DirectoryInfo(@"../../components");
+            string fullDirectory = directory.FullName;
+            string fullFile = path;
+
+            if (!fullFile.StartsWith(fullDirectory))
+            {
+                Console.WriteLine("Unable to make relative path");
+            }
+            else
+            {
+                string p = fullFile.Substring(fullDirectory.Length + 1);
+                p = System.IO.Path.Combine("../../components", p);
+                p = p.Replace('/', System.IO.Path.DirectorySeparatorChar);
+                data.FilePath = p;
+            }
+
+            //data.FilePath = path;
 
 
             string[] pins = Regex.Replace(textSplited[2], @"\s+", "").Split(',');
@@ -105,7 +123,7 @@ namespace CycloneStudio.structs
                 }
             }
 
-            string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d,\\s]+)assign");
+            string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d,\\s]+)(assign|wire)");
             if (textSplitedTwo.Length > 1)
             {
                 string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
@@ -189,8 +207,35 @@ namespace CycloneStudio.structs
             }
         }
 
-        public bool BuildVerilogForProject(List<Rectangle> modules, string name)
-        {               
+        public bool BuildVerilogForProject(List<Rectangle> modules, string name, HashSet<string> usedModules)
+        {
+            string nameSrc = name + "/src";
+            string fileName = "c" + name + ".v";
+            string dirPathString = System.IO.Path.Combine("../../workspace", nameSrc);
+            string filePathString = System.IO.Path.Combine(dirPathString, fileName);
+
+            if (CheckProjectName(nameSrc))
+            {
+                DeleteProjectFolder(nameSrc);
+            }
+            Directory.CreateDirectory(dirPathString);
+            string text = CreateCode(modules, name);
+
+            File.WriteAllText(filePathString, text);
+
+            foreach (string item in usedModules)
+            {
+                int i = item.LastIndexOf("\\");
+                string itenName = item.Remove(0, i+1);
+                string copyTarget = System.IO.Path.Combine(dirPathString, itenName);
+                File.Copy(item, copyTarget);
+            }
+            
+            return true;
+        }
+
+        private string CreateCode(List<Rectangle> modules, string name)
+        {
             HashSet<string> wires = new HashSet<string>();
 
             StringBuilder middlePart = new StringBuilder();
@@ -199,8 +244,8 @@ namespace CycloneStudio.structs
 
             string inPrefix = "input wire ";
             string outPrefix = "output wire ";
-            topPart.Append("module " + name + "(");
-            hiddenPart.Append("//hidden ");
+            topPart.Append("module c" + name + "(");
+            hiddenPart.Append("//hidden: ");
 
             foreach (var rec in modules)
             {
@@ -211,7 +256,7 @@ namespace CycloneStudio.structs
 
                 ProcessPinsToVerilog(module.InPins, wires, middlePart, topPart, hiddenPart, inPrefix, module);
                 ProcessPinsToVerilog(module.OutPins, wires, middlePart, topPart, hiddenPart, outPrefix, module);
-               
+
                 middlePart.Remove(middlePart.Length - 1, 1);
                 middlePart.AppendLine(");");
 
@@ -223,7 +268,7 @@ namespace CycloneStudio.structs
 
             hiddenPart.Remove(hiddenPart.Length - 1, 1);
             hiddenPart.AppendLine("");
-            topPart.AppendLine(hiddenPart.ToString());            
+            topPart.AppendLine(hiddenPart.ToString());
 
             topPart.Append("wire ");
 
@@ -231,13 +276,13 @@ namespace CycloneStudio.structs
             {
                 topPart.Append(wire + ",");
             }
-            topPart.Remove(topPart.Length - 1, 1);            
+            topPart.Remove(topPart.Length - 1, 1);
             topPart.AppendLine(";\n");
 
             topPart.AppendLine(middlePart.ToString());
 
-            Console.WriteLine(topPart.ToString());
-            return false;
+            //Console.WriteLine(topPart.ToString());
+            return topPart.ToString();
         }
 
         private void ProcessPinsToVerilog(List<Pin> pins, HashSet<string> wires, StringBuilder middlePart, StringBuilder topPart, StringBuilder hiddenPart, string inPrefix, Module module)
@@ -259,6 +304,53 @@ namespace CycloneStudio.structs
                 }
 
             }
+        }
+
+        public bool CheckProjectName(string name)
+        {
+            return Directory.Exists(System.IO.Path.Combine("../../workspace", name));           
+        }
+
+        public void DeleteProjectFolder(string name)
+        {
+            Directory.Delete(System.IO.Path.Combine("../../workspace", name), true);
+        }
+
+        public bool SaveProject(string name, SaveDataContainer container)
+        {
+            string dirPathString = System.IO.Path.Combine("../../workspace", name);
+            string filePathString = System.IO.Path.Combine(dirPathString, name + ".xml");
+            Directory.CreateDirectory(dirPathString);
+
+            if (!File.Exists(filePathString))
+            {
+                using (FileStream writer = new FileStream(filePathString, FileMode.Create))
+                {
+                    DataContractSerializer ser = new DataContractSerializer(typeof(SaveDataContainer));
+                    ser.WriteObject(writer, container);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public SaveDataContainer OpenProject(string path, string name)
+        {
+            SaveDataContainer container;
+            string filePathString = System.IO.Path.Combine(path, name + ".xml");
+
+            if (File.Exists(filePathString))
+            {
+                using (FileStream fs = new FileStream(filePathString, FileMode.Open))
+                {
+                    XmlDictionaryReader reader = XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas());
+                    DataContractSerializer ser = new DataContractSerializer(typeof(SaveDataContainer));
+                    container = (SaveDataContainer)ser.ReadObject(reader, true);
+                    reader.Close();
+                }
+                return container;
+            }
+            return null;
         }
     }
 }

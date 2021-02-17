@@ -34,6 +34,8 @@ namespace CycloneStudio
         private bool boardChoosen = false;
         private bool isProject = false;
         private bool isBlock = false;
+        private string actualProjectName;
+        private string choosenBoardName;
         private int moduleId;
         private int wireId;
         private Double zoom = 1;
@@ -44,7 +46,7 @@ namespace CycloneStudio
 
         private List<Rectangle> modules;
         private List<Rectangle> deactivated;
-        private List<Rectangle> highlighted;
+        private List<Rectangle> highlighted;        
 
         private List<MenuItem> unenabledBoards;
         private List<MenuItem> boardItem;
@@ -61,6 +63,8 @@ namespace CycloneStudio
             GenerateMenuItems();
             moduleId = 0;
             wireId = 0;
+            actualProjectName = "";
+            choosenBoardName = "";
 
             modules = new List<Rectangle>();
             deactivated = new List<Rectangle>();
@@ -90,9 +94,7 @@ namespace CycloneStudio
                 }
                 else
                 {
-                    ClearAll(true, false);
-                    string path = entryWindow.Path;
-                    //TODO
+                    LoadSaveAndSetEnviroment(entryWindow);
                 }
             }
             else
@@ -129,18 +131,27 @@ namespace CycloneStudio
 
                 Panel.SetZIndex(el, counter++);
 
-                foreach (Pin pin in module.InPins)
-                {
-                    if (!pin.Hidden)
-                        Panel.SetZIndex(pin.Rectangle, counter++);
-                }
-                foreach (Pin pin in module.OutPins)
-                {
-                    if (!pin.Hidden)
-                        Panel.SetZIndex(pin.Rectangle, counter++);
-                }
+                DeletePinsPolylines(module.InPins, ref counter);
+                DeletePinsPolylines(module.OutPins, ref counter);
             }
 
+        }
+
+        private void DeletePinsPolylines(List<Pin> data, ref int counter)
+        {
+            foreach (Pin pin in data)
+            {
+                foreach (PolylineTagData po in pin.ActiveConnections)
+                {
+                    if (po != null)
+                    {
+                        canvas.Children.Remove((Label)po.Polyline.Tag);
+                        canvas.Children.Remove(po.Polyline);
+                    }
+                }
+                if (!pin.Hidden)
+                    Panel.SetZIndex(pin.Rectangle, counter++);
+            }
         }
 
         private void DeleteModule(object sender)
@@ -188,6 +199,8 @@ namespace CycloneStudio
                         item.IsEnabled = true;
                     }
                     unenabledBoards.Clear();
+                    boardChoosen = false;
+                    choosenBoardName = "";
                 }
             }
         }
@@ -454,15 +467,7 @@ namespace CycloneStudio
                 {
                     Rectangle r = p.Rectangle;
                     Canvas.SetLeft(r, left);
-                    Canvas.SetTop(r, top);
-                    foreach (PolylineTagData po in p.ActiveConnections)
-                    {
-                        if (po != null)
-                        {
-                            canvas.Children.Remove((Label)po.Polyline.Tag);
-                            canvas.Children.Remove(po.Polyline);
-                        }
-                    }
+                    Canvas.SetTop(r, top);                   
                 }
             }
         }
@@ -561,7 +566,7 @@ namespace CycloneStudio
         private void MenuItemGenerateModule(object sender, RoutedEventArgs e)
         {
             MenuItem el = sender as MenuItem;
-
+            Console.WriteLine(el.Header);
             DeactivateMenuItem(el);
 
             MenuData data = el.Tag as MenuData;
@@ -625,6 +630,7 @@ namespace CycloneStudio
                     if (!boardChoosen)
                     {
                         boardChoosen = true;
+                        choosenBoardName = parent.Header as string;
                         foreach (MenuItem item in parentOfParent.Items)
                         {
                             if (!item.Equals(parent))
@@ -941,16 +947,72 @@ namespace CycloneStudio
                 }
                 else
                 {
-                    ClearAll(true, false);
-                    string path = entryWindow.Path;
-                    //TODO
+                    LoadSaveAndSetEnviroment(entryWindow);
+                }
+            }
+        }
+
+        private void LoadSaveAndSetEnviroment(EntryWindow entryWindow)
+        {
+            ClearAll(true, false);
+            string path = entryWindow.Path;
+            string name = entryWindow.Name;
+            actualProjectName = name;
+            this.Title = "Cyclone Studio - " + name;
+
+            SaveDataContainer container = fileControler.OpenProject(path, name);
+
+            if (container != null)
+            {
+                HashSet<string> usedModules = RenderCanvasFromFile(container);
+                foreach (MenuItem item in mmMenu.Items)
+                {
+                    if (item.Header as string == "board")
+                    {                      
+
+                        foreach (MenuItem sub in item.Items)
+                        {
+                            if (sub.Header as string != choosenBoardName)
+                            {
+                                sub.IsEnabled = false;
+                                unenabledBoards.Add(sub);
+                            }
+                            else
+                            {
+                                foreach (MenuItem subItem in sub.Items)
+                                {
+                                    if (usedModules.Contains(subItem.Header))
+                                    {
+                                        subItem.IsEnabled = false;
+                                        boardItem.Add(subItem);
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                    else if (item.Header as string == "io")
+                    {
+                        foreach (MenuItem subItem in item.Items)
+                        {
+                            if (usedModules.Contains(subItem.Header))
+                            {
+                                subItem.IsEnabled = false;
+                                unenabledItems.Add(subItem);
+                            }
+                        }
+                    }
                 }
             }
         }
 
         private void Event_NewProject(object sender, RoutedEventArgs e)
-        {
-            ClearAll(true, false);
+        {            
+            MessageBoxResult result = ShowQuestionDialog("Are you sure?", "New project");
+            if (result == MessageBoxResult.Yes)
+            {
+                ClearAll(true, false);
+            }
         }
 
         private void Event_SaveProject(object sender, RoutedEventArgs e)
@@ -958,7 +1020,52 @@ namespace CycloneStudio
             var dialog = new InputDialog();
             if (dialog.ShowDialog() == true)
             {
-                MessageBox.Show("You said: " + dialog.ResponseText);
+                string projectName = dialog.ResponseText;
+                string message = "";
+
+                if (fileControler.CheckProjectName(projectName))
+                {
+                    string messageBoxText = "Name already exists. Delete and replace project?";
+                    string caption = "Name already exists!";
+                    MessageBoxButton button = MessageBoxButton.YesNo;
+                    MessageBoxImage icon = MessageBoxImage.Warning;
+
+                    MessageBoxResult result = MessageBox.Show(messageBoxText, caption, button, icon);
+
+                    switch (result)
+                    {
+                        case MessageBoxResult.Yes:
+                            message += "Old project deleted.";                            
+                            fileControler.DeleteProjectFolder(projectName);
+                            break;
+                        case MessageBoxResult.No:
+                            MessageBox.Show("Choose new name and try again.");
+                            return;
+                    }
+                }
+                actualProjectName = projectName;
+
+                SaveDataContainer container = new SaveDataContainer();
+                container.ModuleId = moduleId;
+                container.WireId = wireId;
+                container.Board = choosenBoardName;
+
+                foreach (Rectangle item in modules)
+                {
+                    Module m = item.Tag as Module;
+                    container.Modules.Add(m);
+                }
+
+                bool succes = fileControler.SaveProject(projectName, container);
+
+                if (succes)
+                {
+                    MessageBox.Show("Project saved. " + message);
+                }
+                else
+                {
+                    MessageBox.Show("Error. Project was not saved. " + message);
+                }
             }
         }
 
@@ -983,20 +1090,26 @@ namespace CycloneStudio
             }
         }
 
-        private void RenderCanvasFromFile(SaveDataContainer container)
-        {
+        private HashSet<string> RenderCanvasFromFile(SaveDataContainer container)
+        {            
+            //ClearAll(false, false);
             moduleId = container.ModuleId;
             wireId = container.WireId;
-            ClearAll(false, false);
+            choosenBoardName = container.Board;
+            if (choosenBoardName == "")
+            {
+                boardChoosen = false;
+            }
 
-            
             List<Pin> activeOutPins = new List<Pin>();
+            HashSet<string> usedModulesNames = new HashSet<string>();
 
             foreach (Module item in container.Modules)
             {
                 int inPins = item.InPins.FindAll(pin => pin.Hidden == false).Count();
                 List<Pin> outPinsList = item.OutPins.FindAll(pin => pin.Hidden == false);
                 int outPins = outPinsList.Count();
+                usedModulesNames.Add(item.Name);
 
                 activeOutPins.AddRange(outPinsList.FindAll(pin => pin.Connected == true));
 
@@ -1011,6 +1124,7 @@ namespace CycloneStudio
             }
 
             RestoreConnectionsFromSave(activeOutPins);
+            return usedModulesNames;
         }
 
         private void ClearAll(bool proj, bool block)
@@ -1025,6 +1139,9 @@ namespace CycloneStudio
             unenabledItems.Clear();
             moduleId = 0;
             wireId = 0;
+            actualProjectName = "";
+            choosenBoardName = "";
+            this.Title = "Cyclone Studio";
 
             int count = mmMenu.Items.Count;
             for (int i = 3; i < count; i++)
@@ -1035,7 +1152,11 @@ namespace CycloneStudio
             MenuItem item =  mmMenu.Items[7] as MenuItem;
             ((MenuItem)item.Items[0]).IsEnabled = isBlock;
             ((MenuItem)item.Items[1]).IsEnabled = isBlock;
-            
+
+            item = mmMenu.Items[1] as MenuItem;
+            item.IsEnabled = proj;
+            item = mmMenu.Items[2] as MenuItem;
+            item.IsEnabled = proj;
 
         }
 
@@ -1156,14 +1277,18 @@ namespace CycloneStudio
         }
 
         private void Event_SaveBlock(object sender, RoutedEventArgs e)
-        {  
+        {
             SaveFileDialog dlg = new SaveFileDialog();
             dlg.DefaultExt = ".xml";
             dlg.Filter = "XML (*.xml)|*.xml";
             Nullable<bool> result = dlg.ShowDialog();
             if (result.Value != true) return;
+            SaveContentToFile(dlg.FileName);
 
+        }
 
+        private void SaveContentToFile(string path)
+        {
             SaveDataContainer container = new SaveDataContainer();
             container.ModuleId = moduleId;
             container.WireId = wireId;
@@ -1172,14 +1297,13 @@ namespace CycloneStudio
             {
                 Module m = item.Tag as Module;
                 container.Modules.Add(m);
-            }            
+            }
 
-            using (FileStream writer = new FileStream(dlg.FileName, FileMode.Create))
+            using (FileStream writer = new FileStream(path, FileMode.Create))
             {
                 DataContractSerializer ser = new DataContractSerializer(typeof(SaveDataContainer));
                 ser.WriteObject(writer, container);
-            }           
-
+            }
         }
 
         private void Event_NewBlock(object sender, RoutedEventArgs e)
@@ -1189,11 +1313,29 @@ namespace CycloneStudio
 
         private void Event_Build(object sender, RoutedEventArgs e)
         {
-            var dialog = new InputDialog();
-            if (dialog.ShowDialog() == true)
-            {               
-                fileControler.BuildVerilogForProject(modules, dialog.ResponseText);
+            if (actualProjectName == "")
+            {
+                MessageBox.Show("Please save project first.");
+                return;
             }
+
+            HashSet<string> usedModules = new HashSet<string>();
+            foreach (Rectangle rectangle in modules)
+            {
+                Module module = rectangle.Tag as Module;
+                usedModules.Add(module.Path);
+
+                foreach (Pin pin in module.InPins)
+                {
+                    if (!pin.Connected && !pin.Hidden)
+                    {
+                        MessageBox.Show("Module " + module.Id + " (" + module.Name + ") has unconnected pin " + pin.Name);
+                        return;
+                    }
+                }
+            }
+            fileControler.BuildVerilogForProject(modules, actualProjectName, usedModules);
+
             //fileControler.BuildVerilogForProject(modules, "nameaaa");
         }
 

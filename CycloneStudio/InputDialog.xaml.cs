@@ -23,6 +23,7 @@ namespace CycloneStudio
         {
             InitializeComponent();
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            textBoxName.Focus();
         }
 
         public string ResponseText

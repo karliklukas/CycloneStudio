@@ -16,6 +16,7 @@ namespace CycloneStudio.structs
         private List<Module> modules;
         private int moduleId;
         private int wireId;
+        private string board;
 
         public SaveDataContainer()
         {
@@ -24,6 +25,7 @@ namespace CycloneStudio.structs
 
         public int ModuleId { get => moduleId; set => moduleId = value; }
         public int WireId { get => wireId; set => wireId = value; }
+        public string Board { get => board; set => board = value; }
         internal List<Module> Modules { get => modules; set => modules = value; }
 
         

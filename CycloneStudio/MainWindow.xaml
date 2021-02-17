@@ -68,19 +68,19 @@
         </ScrollViewer>
 
         <Menu x:Name="mmMenu" Height="30" VerticalAlignment="Top" FontSize="15" Background="{StaticResource NormalBrush}">
-            <MenuItem Header="File" Height="30" Width="40">
-                <MenuItem Header="Open project" Click="Event_OpenProject" />
-                <MenuItem Header="New project" Click="Event_NewProject" />
-                <MenuItem Header="Save project" Click="Event_SaveProject" />
+            <MenuItem Header="_File" Height="30" Width="40">
+                <MenuItem Header="_Open project" Click="Event_OpenProject" />
+                <MenuItem Header="_New project" Click="Event_NewProject" />
+                <MenuItem Header="_Save project" Click="Event_SaveProject" />
                 <Separator/>
-                <MenuItem Header="Open block" Click="Event_OpenBlock" />
-                <MenuItem Header="New block" Click="Event_NewBlock"/>
-                <MenuItem Header="Save block" Click="Event_SaveBlock"/>
+                <MenuItem Header="_Open block" Click="Event_OpenBlock" />
+                <MenuItem Header="_New block" Click="Event_NewBlock"/>
+                <MenuItem Header="_Save block" Click="Event_SaveBlock"/>
                 <Separator/>
-                <MenuItem Header="Save as image" Click="Event_SaveAsImage"/>
+                <MenuItem Header="_Save as image" Click="Event_SaveAsImage"/>
             </MenuItem>
-            <MenuItem Header="Build" Height="30" Width="50" Click="Event_Build"/>
-            <MenuItem Header="Upload" Height="30" Width="60" Click="Event_Upload"/>
+            <MenuItem Header="_Build" Height="30" Width="50" Click="Event_Build"/>
+            <MenuItem Header="_Upload" Height="30" Width="60" Click="Event_Upload"/>
         </Menu>
 
         <ToggleButton x:Name="deleteToggle" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="10,85,0,0" Height="40" Width="40" 
