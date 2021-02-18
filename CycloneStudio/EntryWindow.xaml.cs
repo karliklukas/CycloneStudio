@@ -22,7 +22,7 @@ namespace CycloneStudio
     {
         public bool Confirm { get; set; }
         public string Path { get; set; }
-        public string Name { get; set; }
+        public string ProjName { get; set; }
         private FileControler fileControler;
 
         public EntryWindow()
@@ -54,16 +54,15 @@ namespace CycloneStudio
         }
 
         private void Event_OpenProject(object sender, RoutedEventArgs e)
-        {
-            
-                        
+        { 
             if (listViewProjects.SelectedItem != null)
             {                
                 LoadWindowProjects selectedItem = listViewProjects.SelectedItem as LoadWindowProjects;
                 Path = selectedItem.Path;
-                Name = selectedItem.Name;
+                ProjName = selectedItem.Name;
+                DialogResult = true;
             }
-            DialogResult = true;
+            
             //this.Close();
         }
 

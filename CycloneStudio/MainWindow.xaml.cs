@@ -79,6 +79,10 @@ namespace CycloneStudio
             canvas.MouseMove += Canvas_MouseMove;
             canvas.MouseLeftButtonUp += Canvas_MouseUp;
 
+            canvas.Height = SystemParameters.PrimaryScreenHeight -94;
+            canvas.Width = SystemParameters.PrimaryScreenWidth;
+            Console.WriteLine(SystemParameters.PrimaryScreenHeight + " " + SystemParameters.PrimaryScreenWidth);
+
             ContentRendered += Window_ContentRendered;
         }
 
@@ -956,7 +960,7 @@ namespace CycloneStudio
         {
             ClearAll(true, false);
             string path = entryWindow.Path;
-            string name = entryWindow.Name;
+            string name = entryWindow.ProjName;
             actualProjectName = name;
             this.Title = "Cyclone Studio - " + name;
 
@@ -967,8 +971,8 @@ namespace CycloneStudio
                 HashSet<string> usedModules = RenderCanvasFromFile(container);
                 foreach (MenuItem item in mmMenu.Items)
                 {
-                    if (item.Header as string == "board")
-                    {                      
+                    if (item.Header as string == "board" && boardChoosen)
+                    { 
 
                         foreach (MenuItem sub in item.Items)
                         {
@@ -1044,7 +1048,7 @@ namespace CycloneStudio
                     }
                 }
                 actualProjectName = projectName;
-
+                this.Title = "Cyclone Studio - " + projectName;
                 SaveDataContainer container = new SaveDataContainer();
                 container.ModuleId = moduleId;
                 container.WireId = wireId;
@@ -1056,9 +1060,9 @@ namespace CycloneStudio
                     container.Modules.Add(m);
                 }
 
-                bool succes = fileControler.SaveProject(projectName, container);
+                bool success = fileControler.SaveProject(projectName, container);
 
-                if (succes)
+                if (success)
                 {
                     MessageBox.Show("Project saved. " + message);
                 }
@@ -1096,10 +1100,9 @@ namespace CycloneStudio
             moduleId = container.ModuleId;
             wireId = container.WireId;
             choosenBoardName = container.Board;
-            if (choosenBoardName == "")
-            {
-                boardChoosen = false;
-            }
+            
+            boardChoosen = choosenBoardName != "";
+            
 
             List<Pin> activeOutPins = new List<Pin>();
             HashSet<string> usedModulesNames = new HashSet<string>();

@@ -26,6 +26,15 @@ namespace CycloneStudio
             textBoxName.Focus();
         }
 
+        public InputDialog(string newTitle,string newText)
+        {
+            InitializeComponent();
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            textBoxName.Focus();
+            this.Title = newTitle;
+            textLabel.Content = newText;
+        }
+
         public string ResponseText
         {
             get { return textBoxName.Text; }
@@ -39,7 +48,7 @@ namespace CycloneStudio
 
         private void textChangedEventHandler(object sender, TextChangedEventArgs e)
         {
-            if (textBoxName.Text.Length < 5)
+            if (textBoxName.Text.Length < 4)
             {
                 okButton.IsEnabled = false;
             }
