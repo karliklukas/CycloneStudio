@@ -58,7 +58,7 @@ namespace CycloneStudio
         {
             InitializeComponent();
 
-            fileControler = new FileControler(new RoutedEventHandler(MenuItemGenerateModule));
+            fileControler = new FileControler(new RoutedEventHandler(MenuItemGenerateModule), new RoutedEventHandler(MenuItemCustomPin));
 
             GenerateMenuItems();
             moduleId = 0;
@@ -80,8 +80,7 @@ namespace CycloneStudio
             canvas.MouseLeftButtonUp += Canvas_MouseUp;
 
             canvas.Height = SystemParameters.PrimaryScreenHeight -94;
-            canvas.Width = SystemParameters.PrimaryScreenWidth;
-            Console.WriteLine(SystemParameters.PrimaryScreenHeight + " " + SystemParameters.PrimaryScreenWidth);
+            canvas.Width = SystemParameters.PrimaryScreenWidth;            
 
             ContentRendered += Window_ContentRendered;
         }
@@ -567,10 +566,48 @@ namespace CycloneStudio
             fileControler.GenerateMenuItems(mmMenu);
         }
 
+        private void MenuItemCustomPin(object sender, RoutedEventArgs e)
+        {
+            MenuItem el = sender as MenuItem;
+            //Console.WriteLine(el.Header);
+            //DeactivateMenuItem(el);
+            
+            var dialog = new InputDialog();
+            if (dialog.ShowDialog() == true)
+            {
+                string pinName = dialog.ResponseText;
+
+                MenuData data = el.Tag as MenuData;
+                MenuData newPinData;
+                bool success = fileControler.SavaCustomPin(actualProjectName, pinName, data.FilePath, out newPinData);
+
+                if (success)
+                {
+                    IEnumerable<string> inPins = newPinData.InPins.Except(newPinData.HiddenPins);
+                    IEnumerable<string> outPins = newPinData.OutPins.Except(newPinData.HiddenPins);
+
+                    int pinsCount = Math.Max(inPins.Count(), outPins.Count());
+                    CreateModule(newPinData, out Module module, out Grid hlavni, 10 + pinsCount * 30);
+
+                    CreatePinsFromList(newPinData.InPins, newPinData.HiddenPins, module, hlavni, 10, 15, Types.IN, true);
+                    CreatePinsFromList(newPinData.OutPins, newPinData.HiddenPins, module, hlavni, 130, 90, Types.OUT, true);
+
+                    hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
+                    hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
+                }
+                else
+                {
+                    MessageBox.Show("Error. Pin name propably already exists.");
+                }
+
+            }
+
+        }
+
         private void MenuItemGenerateModule(object sender, RoutedEventArgs e)
         {
             MenuItem el = sender as MenuItem;
-            Console.WriteLine(el.Header);
+            
             DeactivateMenuItem(el);
 
             MenuData data = el.Tag as MenuData;
@@ -581,8 +618,8 @@ namespace CycloneStudio
             int pinsCount = Math.Max(inPins.Count(), outPins.Count());
             CreateModule(data, out Module module, out Grid hlavni, 10 + pinsCount * 30);
 
-            CreatePinsFromList(data.InPins, data.HiddenPins, module, hlavni, 10, 15, Types.IN);
-            CreatePinsFromList(data.OutPins, data.HiddenPins, module, hlavni, 130, 90, Types.OUT);
+            CreatePinsFromList(data.InPins, data.HiddenPins, module, hlavni, 10, 15, Types.IN, false);
+            CreatePinsFromList(data.OutPins, data.HiddenPins, module, hlavni, 130, 90, Types.OUT, false);
 
             hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
             hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
@@ -590,7 +627,7 @@ namespace CycloneStudio
 
         }
 
-        private void CreatePinsFromList(List<string> pinsList, List<string> hiddenPins, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, Types pinType)
+        private void CreatePinsFromList(List<string> pinsList, List<string> hiddenPins, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, Types pinType, bool custom)
         {
             int topMargin = 30;
             int count = 0;
@@ -607,6 +644,8 @@ namespace CycloneStudio
                     createdPin = CreatePin(leftMarginPin, topMargin + topMargin * count, pinType, pinName, module.Id, 50, 0);
                     hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName));
                 }
+
+                createdPin.CustomPin = custom;
 
                 if (pinType == Types.IN)
                 {
@@ -1311,6 +1350,7 @@ namespace CycloneStudio
 
         private void Event_NewBlock(object sender, RoutedEventArgs e)
         {
+            fileControler.DeleteBlockTmpFolder();
             ClearAll(false, true);
         }
 

@@ -18,10 +18,15 @@ namespace CycloneStudio.structs
     class FileControler
     {
         private readonly RoutedEventHandler eventHandler;
+        private readonly RoutedEventHandler eventCustomHandler;
 
         public FileControler() { }
 
-        public FileControler(RoutedEventHandler eventHandler) => this.eventHandler = eventHandler;
+        public FileControler(RoutedEventHandler eventHandler, RoutedEventHandler eventCustomHandler)
+        {
+            this.eventHandler = eventHandler;
+            this.eventCustomHandler = eventCustomHandler;
+        }        
 
         public void GenerateMenuItems(Menu menu)
         {
@@ -44,6 +49,10 @@ namespace CycloneStudio.structs
                 {
                     foreach (DirectoryInfo dir in innerDir)
                     {
+                        if (sub.Name == "block" && dir.Name == "tmp")
+                        {
+                            continue;
+                        }
                         MenuItem subItem = new MenuItem();
                         subItem.Header = dir.Name;
                         newMenuItem.Items.Add(subItem);
@@ -71,40 +80,56 @@ namespace CycloneStudio.structs
               .OrderBy(x => TrimModuleName(x).LastIndexOfAny(nums))
               .ThenBy(x => x.Name);
 
+            
             foreach (FileInfo file in sortedFiles)
-            {                
+            {
                 MenuItem newSubMenuItem = new MenuItem();
                 newSubMenuItem.Header = TrimModuleName(file);
                 newMenuItem.Items.Add(newSubMenuItem);
+                MenuData data = ReadAndProcessFile(file.FullName, false);
+                newSubMenuItem.Tag = data;
+
+                if (sub.Name == "io" && Regex.IsMatch(file.Name, "(cIN_PIN\\.v|cOUT_PIN\\.v)"))
+                {
+                    newSubMenuItem.Click += eventCustomHandler;
+                    continue;
+                }
+                
                 newSubMenuItem.Click += eventHandler;
 
-                MenuData data = ReadAndProcessFile(file.FullName);
-                newSubMenuItem.Tag = data;
+                
             }
         }
 
-        private MenuData ReadAndProcessFile(string path)
+        private MenuData ReadAndProcessFile(string path, bool isBlock)
         {
             MenuData data = new MenuData();
             string text = File.ReadAllText(path);
             string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\n\\s(]+)\\);");
             data.Name = textSplited[1].Remove(0, 1);
-
-            DirectoryInfo directory = new DirectoryInfo(@"../../components");
-            string fullDirectory = directory.FullName;
-            string fullFile = path;
-
-            if (!fullFile.StartsWith(fullDirectory))
+            string dirPath = "../../components";
+            if (isBlock)
             {
-                Console.WriteLine("Unable to make relative path");
-            }
-            else
+                data.FilePath = path.Replace('/', System.IO.Path.DirectorySeparatorChar);
+            } else
             {
-                string p = fullFile.Substring(fullDirectory.Length + 1);
-                p = System.IO.Path.Combine("../../components", p);
-                p = p.Replace('/', System.IO.Path.DirectorySeparatorChar);
-                data.FilePath = p;
+                DirectoryInfo directory = new DirectoryInfo(@dirPath);
+                string fullDirectory = directory.FullName;
+                string fullFile = path;
+
+                if (!fullFile.StartsWith(fullDirectory))
+                {
+                    Console.WriteLine("Unable to make relative path");
+                }
+                else
+                {
+                    string p = fullFile.Substring(fullDirectory.Length + 1);
+                    p = System.IO.Path.Combine(dirPath, p);
+                    p = p.Replace('/', System.IO.Path.DirectorySeparatorChar);
+                    data.FilePath = p;
+                }
             }
+            
 
             //data.FilePath = path;
 
@@ -150,7 +175,7 @@ namespace CycloneStudio.structs
 
             foreach (FileInfo file in Files)
             {
-                MenuData data = ReadAndProcessFile(file.FullName);
+                MenuData data = ReadAndProcessFile(file.FullName, false);
                 string name = TrimModuleName(file);
                 MenuItem newSubMenuItem = new MenuItem();
                 newSubMenuItem.Header = name;
@@ -219,7 +244,7 @@ namespace CycloneStudio.structs
                 DeleteProjectFolder(nameSrc);
             }
             Directory.CreateDirectory(dirPathString);
-            string text = CreateCode(modules, name);
+            string text = CreateVerilogCode(modules, name);
 
             File.WriteAllText(filePathString, text);
 
@@ -234,7 +259,7 @@ namespace CycloneStudio.structs
             return true;
         }
 
-        private string CreateCode(List<Rectangle> modules, string name)
+        private string CreateVerilogCode(List<Rectangle> modules, string name)
         {
             HashSet<string> wires = new HashSet<string>();
 
@@ -316,6 +341,14 @@ namespace CycloneStudio.structs
             Directory.Delete(System.IO.Path.Combine("../../workspace", name), true);
         }
 
+        public void DeleteBlockTmpFolder()
+        {
+            if (Directory.Exists("../../components/block/tmp"))
+            {
+                Directory.Delete("../../components/block/tmp", true);
+            }            
+        }
+
         public bool SaveProject(string name, SaveDataContainer container)
         {
             string dirPathString = System.IO.Path.Combine("../../workspace", name);
@@ -351,6 +384,26 @@ namespace CycloneStudio.structs
                 return container;
             }
             return null;
+        }
+
+        public bool SavaCustomPin(string blockName, string pinName, string sourcePinPath, out MenuData data)
+        {
+            string name = blockName != "" ? blockName : "tmp";
+            string blockPath = System.IO.Path.Combine("../../components/block", name);
+            Directory.CreateDirectory(blockPath);
+            data = null;
+
+            string str = File.ReadAllText(sourcePinPath);
+            str = str.Replace("PIN", pinName);
+            string targetPath = String.Concat(blockPath, "\\c", pinName, ".v");
+            if (File.Exists(targetPath))
+            {
+                return false;
+            }
+            File.WriteAllText(targetPath, str);
+            data = ReadAndProcessFile(targetPath, true);
+
+            return true;
         }
     }
 }
