@@ -87,7 +87,7 @@ namespace CycloneStudio
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            EntryWindow entryWindow = new EntryWindow();
+            EntryWindow entryWindow = new EntryWindow(true);
             entryWindow.Owner = this;
             if (entryWindow.ShowDialog() == true)
             {
@@ -97,7 +97,8 @@ namespace CycloneStudio
                 }
                 else
                 {
-                    LoadSaveAndSetEnviroment(entryWindow);
+                    ClearAll(true, false);
+                    LoadSaveAndSetEnviroment(entryWindow.Path, entryWindow.ProjName);
                 }
             }
             else
@@ -308,7 +309,7 @@ namespace CycloneStudio
 
         private void Pin_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (handToggle.IsChecked == false) return;
+            if (handToggle.IsChecked == false || _isLineDrag) return;
             if (_isLineDragDone)
             {
                 _isLineDragDone = false;
@@ -572,7 +573,7 @@ namespace CycloneStudio
             //Console.WriteLine(el.Header);
             //DeactivateMenuItem(el);
             
-            var dialog = new InputDialog();
+            var dialog = new InputDialog("Create pin", "Enter custom pin name.");
             if (dialog.ShowDialog() == true)
             {
                 string pinName = dialog.ResponseText;
@@ -979,7 +980,7 @@ namespace CycloneStudio
 
         private void Event_OpenProject(object sender, RoutedEventArgs e)
         {
-            EntryWindow entryWindow = new EntryWindow();
+            EntryWindow entryWindow = new EntryWindow(true);
             entryWindow.Owner = this;
             if (entryWindow.ShowDialog() == true)
             {
@@ -990,59 +991,64 @@ namespace CycloneStudio
                 }
                 else
                 {
-                    LoadSaveAndSetEnviroment(entryWindow);
+                    ClearAll(true, false);
+                    LoadSaveAndSetEnviroment(entryWindow.Path, entryWindow.ProjName);
                 }
             }
         }
 
-        private void LoadSaveAndSetEnviroment(EntryWindow entryWindow)
-        {
-            ClearAll(true, false);
-            string path = entryWindow.Path;
-            string name = entryWindow.ProjName;
+        private void LoadSaveAndSetEnviroment(string path, string name)
+        {            
+            //string path = entryWindow.Path;
+            //string name = entryWindow.ProjName;
             actualProjectName = name;
             this.Title = "Cyclone Studio - " + name;
 
-            SaveDataContainer container = fileControler.OpenProject(path, name);
+            SaveDataContainer container = fileControler.OpenSaveFile(path, name);
 
             if (container != null)
             {
                 HashSet<string> usedModules = RenderCanvasFromFile(container);
-                foreach (MenuItem item in mmMenu.Items)
-                {
-                    if (item.Header as string == "board" && boardChoosen)
-                    { 
+                DisableMenuItemFromSaveFile(usedModules);
+            }
+        }
 
-                        foreach (MenuItem sub in item.Items)
+        private void DisableMenuItemFromSaveFile(HashSet<string> usedModules)
+        {
+            foreach (MenuItem item in mmMenu.Items)
+            {
+                if (item.Header as string == "board" && boardChoosen)
+                {
+
+                    foreach (MenuItem sub in item.Items)
+                    {
+                        if (sub.Header as string != choosenBoardName)
                         {
-                            if (sub.Header as string != choosenBoardName)
+                            sub.IsEnabled = false;
+                            unenabledBoards.Add(sub);
+                        }
+                        else
+                        {
+                            foreach (MenuItem subItem in sub.Items)
                             {
-                                sub.IsEnabled = false;
-                                unenabledBoards.Add(sub);
-                            }
-                            else
-                            {
-                                foreach (MenuItem subItem in sub.Items)
+                                if (usedModules.Contains(subItem.Header))
                                 {
-                                    if (usedModules.Contains(subItem.Header))
-                                    {
-                                        subItem.IsEnabled = false;
-                                        boardItem.Add(subItem);
-                                    }
+                                    subItem.IsEnabled = false;
+                                    boardItem.Add(subItem);
                                 }
                             }
-
                         }
+
                     }
-                    else if (item.Header as string == "io")
+                }
+                else if (item.Header as string == "io")
+                {
+                    foreach (MenuItem subItem in item.Items)
                     {
-                        foreach (MenuItem subItem in item.Items)
+                        if (usedModules.Contains(subItem.Header))
                         {
-                            if (usedModules.Contains(subItem.Header))
-                            {
-                                subItem.IsEnabled = false;
-                                unenabledItems.Add(subItem);
-                            }
+                            subItem.IsEnabled = false;
+                            unenabledItems.Add(subItem);
                         }
                     }
                 }
@@ -1059,78 +1065,28 @@ namespace CycloneStudio
         }
 
         private void Event_SaveProject(object sender, RoutedEventArgs e)
-        {
-            var dialog = new InputDialog();
-            if (dialog.ShowDialog() == true)
-            {
-                string projectName = dialog.ResponseText;
-                string message = "";
-
-                if (fileControler.CheckProjectName(projectName))
-                {
-                    string messageBoxText = "Name already exists. Delete and replace project?";
-                    string caption = "Name already exists!";
-                    MessageBoxButton button = MessageBoxButton.YesNo;
-                    MessageBoxImage icon = MessageBoxImage.Warning;
-
-                    MessageBoxResult result = MessageBox.Show(messageBoxText, caption, button, icon);
-
-                    switch (result)
-                    {
-                        case MessageBoxResult.Yes:
-                            message += "Old project deleted.";                            
-                            fileControler.DeleteProjectFolder(projectName);
-                            break;
-                        case MessageBoxResult.No:
-                            MessageBox.Show("Choose new name and try again.");
-                            return;
-                    }
-                }
-                actualProjectName = projectName;
-                this.Title = "Cyclone Studio - " + projectName;
-                SaveDataContainer container = new SaveDataContainer();
-                container.ModuleId = moduleId;
-                container.WireId = wireId;
-                container.Board = choosenBoardName;
-
-                foreach (Rectangle item in modules)
-                {
-                    Module m = item.Tag as Module;
-                    container.Modules.Add(m);
-                }
-
-                bool success = fileControler.SaveProject(projectName, container);
-
-                if (success)
-                {
-                    MessageBox.Show("Project saved. " + message);
-                }
-                else
-                {
-                    MessageBox.Show("Error. Project was not saved. " + message);
-                }
-            }
+        {           
+            SaveProjectOrBlock(true);
         }
 
         private void Event_OpenBlock(object sender, RoutedEventArgs e)
         {
-            isBlock = true;
-            isProject = false;
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "XML (*.xml)|*.xml";
-            if (openFileDialog.ShowDialog() == true)
+            EntryWindow entryWindow = new EntryWindow(false);
+            entryWindow.Owner = this;
+            if (entryWindow.ShowDialog() == true)
             {
-                SaveDataContainer container;
 
-                using (FileStream fs = new FileStream(openFileDialog.FileName, FileMode.Open))
+                if (entryWindow.Confirm)
                 {
-                    XmlDictionaryReader reader = XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas());
-                    DataContractSerializer ser = new DataContractSerializer(typeof(SaveDataContainer));
-                    container = (SaveDataContainer)ser.ReadObject(reader, true);
-                    reader.Close();
+                    ClearAll(false, true);
                 }
-                RenderCanvasFromFile(container);
-            }
+                else
+                {
+                    ClearAll(false, true);
+                    LoadSaveAndSetEnviroment(entryWindow.Path, entryWindow.ProjName);
+                }
+            }           
+
         }
 
         private HashSet<string> RenderCanvasFromFile(SaveDataContainer container)
@@ -1320,38 +1276,87 @@ namespace CycloneStudio
 
         private void Event_SaveBlock(object sender, RoutedEventArgs e)
         {
-            SaveFileDialog dlg = new SaveFileDialog();
-            dlg.DefaultExt = ".xml";
-            dlg.Filter = "XML (*.xml)|*.xml";
-            Nullable<bool> result = dlg.ShowDialog();
-            if (result.Value != true) return;
-            SaveContentToFile(dlg.FileName);
+            SaveProjectOrBlock(false);
+            //TODO path tmp u custom pinu; message pokud nejde build
+            //TODO aktualizovat blocks?
 
         }
 
-        private void SaveContentToFile(string path)
+        private void SaveProjectOrBlock(bool isProject)
         {
-            SaveDataContainer container = new SaveDataContainer();
-            container.ModuleId = moduleId;
-            container.WireId = wireId;
-
-            foreach (Rectangle item in modules)
+            string dialogTextBig;
+            string dialogTextSmall;
+            if (isProject)
             {
-                Module m = item.Tag as Module;
-                container.Modules.Add(m);
+                dialogTextBig = "Project";
+                dialogTextSmall = "project";
             }
-
-            using (FileStream writer = new FileStream(path, FileMode.Create))
+            else
             {
-                DataContractSerializer ser = new DataContractSerializer(typeof(SaveDataContainer));
-                ser.WriteObject(writer, container);
+                dialogTextBig = "Block";
+                dialogTextSmall = "block";
+            }
+            var dialog = new InputDialog(dialogTextBig +" name", "Enter "+ dialogTextSmall + " name:");
+            if (dialog.ShowDialog() == true)
+            {
+                string fileName = dialog.ResponseText;
+                string message = "";
+
+                if (fileControler.CheckName(fileName, isProject))
+                {
+                    string messageBoxText = "Name already exists. Delete and replace "+ dialogTextSmall+"? ";
+                    string caption = "Name already exists!";
+                    MessageBoxButton button = MessageBoxButton.YesNo;
+                    MessageBoxImage icon = MessageBoxImage.Warning;
+
+                    MessageBoxResult result = MessageBox.Show(messageBoxText, caption, button, icon);
+
+                    switch (result)
+                    {
+                        case MessageBoxResult.Yes:
+                            message += "Old " + dialogTextSmall + " deleted.";
+                            fileControler.DeleteFolder(fileName, isProject);
+                            break;
+                        case MessageBoxResult.No:
+                            MessageBox.Show("Choose new name and try again.");
+                            return;
+                    }
+                }
+                actualProjectName = fileName;
+                this.Title = "Cyclone Studio - " + fileName;
+                SaveDataContainer container = new SaveDataContainer();
+                container.ModuleId = moduleId;
+                container.WireId = wireId;
+                container.Board = choosenBoardName;
+
+                foreach (Rectangle item in modules)
+                {
+                    Module m = item.Tag as Module;
+                    container.Modules.Add(m);
+                }
+
+                bool success = fileControler.SaveProjectOrBlock(fileName, container, isProject);
+
+                if (success)
+                {
+                    MessageBox.Show(dialogTextBig+" saved. " + message);
+                }
+                else
+                {
+                    MessageBox.Show("Error. " + dialogTextBig + " was not saved. " + message);
+                }
             }
         }
 
         private void Event_NewBlock(object sender, RoutedEventArgs e)
         {
-            fileControler.DeleteBlockTmpFolder();
-            ClearAll(false, true);
+            MessageBoxResult result = ShowQuestionDialog("Are you sure?", "New block");
+            if (result == MessageBoxResult.Yes)
+            {
+                fileControler.DeleteBlockTmpFolder();
+                ClearAll(false, true);
+            }
+            
         }
 
         private void Event_Build(object sender, RoutedEventArgs e)

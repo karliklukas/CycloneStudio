@@ -25,13 +25,18 @@ namespace CycloneStudio
         public string ProjName { get; set; }
         private FileControler fileControler;
 
-        public EntryWindow()
+        public EntryWindow(bool isProject)
         {
             InitializeComponent();
             Confirm = false;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             fileControler = new FileControler();
-            fileControler.GenerateProjectsList(listViewProjects.Items);
+            fileControler.GenerateProjectsList(listViewProjects.Items, isProject);
+
+            if (!isProject)
+            {
+                HeaderLabel.Content = "Blocks";
+            }
 
             if (listViewProjects.Items.Count == 0)
             {

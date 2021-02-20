@@ -17,6 +17,8 @@ namespace CycloneStudio.structs
 {    
     class FileControler
     {
+        private const string PROJECT_PATH = "..\\..\\workspace";
+        private const string BLOCK_PATH = "..\\..\\components\\block";
         private readonly RoutedEventHandler eventHandler;
         private readonly RoutedEventHandler eventCustomHandler;
 
@@ -30,7 +32,7 @@ namespace CycloneStudio.structs
 
         public void GenerateMenuItems(Menu menu)
         {
-            DirectoryInfo d = new DirectoryInfo(@"../../components");
+            DirectoryInfo d = new DirectoryInfo(@"..\\..\\components");
             DirectoryInfo[] subdir = d.GetDirectories();
 
             ReadAndGenerateItems(menu, subdir);
@@ -107,7 +109,7 @@ namespace CycloneStudio.structs
             string text = File.ReadAllText(path);
             string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\n\\s(]+)\\);");
             data.Name = textSplited[1].Remove(0, 1);
-            string dirPath = "../../components";
+            string dirPath = "..\\..\\components";
             if (isBlock)
             {
                 data.FilePath = path.Replace('/', System.IO.Path.DirectorySeparatorChar);
@@ -214,29 +216,42 @@ namespace CycloneStudio.structs
             return name;
         }
 
-        public void GenerateProjectsList(ItemCollection items)
+        public void GenerateProjectsList(ItemCollection items, bool isProject)
         {
-            DirectoryInfo d = new DirectoryInfo(@"../../workspace");
+            string path;
+            if (isProject)
+            {
+                path = PROJECT_PATH;
+            }
+            else
+            {
+                path = BLOCK_PATH;
+            }
+            DirectoryInfo d = new DirectoryInfo(@path);
             DirectoryInfo[] subdir = d.GetDirectories();
 
             foreach (DirectoryInfo sub in subdir)
-            {                
-                LoadWindowProjects project = new LoadWindowProjects
+            {
+                if (sub.Name != "tmp")
                 {
-                    Name = sub.Name,
-                    Path = sub.FullName,
-                    CreateDate = sub.CreationTime.ToString()
-                };
-                items.Add(project);
-                items.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
+                    LoadWindowProjects project = new LoadWindowProjects
+                    {
+                        Name = sub.Name,
+                        Path = sub.FullName,
+                        CreateDate = sub.CreationTime.ToString()
+                    };
+                    items.Add(project);
+                }
+                               
             }
+            items.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
 
         public bool BuildVerilogForProject(List<Rectangle> modules, string name, HashSet<string> usedModules)
         {
-            string nameSrc = name + "/src";
+            string nameSrc = name + "\\src";
             string fileName = "c" + name + ".v";
-            string dirPathString = System.IO.Path.Combine("../../workspace", nameSrc);
+            string dirPathString = System.IO.Path.Combine(PROJECT_PATH, nameSrc);
             string filePathString = System.IO.Path.Combine(dirPathString, fileName);
 
             if (CheckProjectName(nameSrc))
@@ -333,25 +348,58 @@ namespace CycloneStudio.structs
 
         public bool CheckProjectName(string name)
         {
-            return Directory.Exists(System.IO.Path.Combine("../../workspace", name));           
+            return Directory.Exists(System.IO.Path.Combine(PROJECT_PATH, name));           
+        }
+
+        public bool CheckName(string name, bool isProject)
+        {
+            if (isProject)
+            {
+                return Directory.Exists(System.IO.Path.Combine(PROJECT_PATH, name));
+            } else
+            {
+                return Directory.Exists(System.IO.Path.Combine(BLOCK_PATH, name));
+            }            
         }
 
         public void DeleteProjectFolder(string name)
         {
-            Directory.Delete(System.IO.Path.Combine("../../workspace", name), true);
+            Directory.Delete(System.IO.Path.Combine(PROJECT_PATH, name), true);
+        }
+
+        public void DeleteFolder(string name, bool isProject)
+        {
+            if (isProject)
+            {
+                Directory.Delete(System.IO.Path.Combine(PROJECT_PATH, name), true);
+            }
+            else
+            {
+                Directory.Delete(System.IO.Path.Combine(BLOCK_PATH, name), true);
+            }
+            
         }
 
         public void DeleteBlockTmpFolder()
         {
-            if (Directory.Exists("../../components/block/tmp"))
+            if (Directory.Exists("..\\..\\components\\block\\tmp"))
             {
-                Directory.Delete("../../components/block/tmp", true);
+                Directory.Delete("..\\..\\components\\block\\tmp", true);
             }            
         }
 
-        public bool SaveProject(string name, SaveDataContainer container)
+        public bool SaveProjectOrBlock(string name, SaveDataContainer container, bool isProject)
         {
-            string dirPathString = System.IO.Path.Combine("../../workspace", name);
+            string path;
+            if (isProject)
+            {
+                path = PROJECT_PATH;
+            }
+            else
+            {
+                path = BLOCK_PATH;
+            }
+            string dirPathString = System.IO.Path.Combine(path, name);
             string filePathString = System.IO.Path.Combine(dirPathString, name + ".xml");
             Directory.CreateDirectory(dirPathString);
 
@@ -367,7 +415,7 @@ namespace CycloneStudio.structs
             return false;
         }
 
-        public SaveDataContainer OpenProject(string path, string name)
+        public SaveDataContainer OpenSaveFile(string path, string name)
         {
             SaveDataContainer container;
             string filePathString = System.IO.Path.Combine(path, name + ".xml");
@@ -389,7 +437,7 @@ namespace CycloneStudio.structs
         public bool SavaCustomPin(string blockName, string pinName, string sourcePinPath, out MenuData data)
         {
             string name = blockName != "" ? blockName : "tmp";
-            string blockPath = System.IO.Path.Combine("../../components/block", name);
+            string blockPath = System.IO.Path.Combine(BLOCK_PATH, name);
             Directory.CreateDirectory(blockPath);
             data = null;
 

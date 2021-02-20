@@ -8,7 +8,7 @@
         Title="CycloneStudio" Height="360" Width="413" WindowStyle="ToolWindow" ResizeMode="NoResize">
     <Grid>
         <Button x:Name="CloseBtn" Content="Close" HorizontalAlignment="Left" Margin="307,290,0,0" VerticalAlignment="Top" Width="75" Click="Event_Close" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
-        <Button x:Name="NewBtn" Content="New project" HorizontalAlignment="Left" Margin="307,254,0,0" VerticalAlignment="Top" Width="75" Click="Event_NewProject" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
+        <Button x:Name="NewBtn" Content="New" HorizontalAlignment="Left" Margin="307,254,0,0" VerticalAlignment="Top" Width="75" Click="Event_NewProject" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
         <ListView x:Name="listViewProjects" HorizontalAlignment="Left" Height="284" Margin="10,26,0,0" VerticalAlignment="Top" Width="230" SelectionMode="Single" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
             <ListView.View>
                 <GridView AllowsColumnReorder="False">
@@ -29,7 +29,7 @@
             </ListView.View>
         </ListView>
         <Button x:Name="OpenBtn" Content="Open" HorizontalAlignment="Left" Margin="307,218,0,0" VerticalAlignment="Top" Width="75" Click="Event_OpenProject" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
-        <Label Content="Projects" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="110" FontWeight="Bold"/>
+        <Label x:Name="HeaderLabel" Content="Projects" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="110" FontWeight="Bold"/>
         <Image HorizontalAlignment="Left" Height="100" Margin="255,35,0,0" VerticalAlignment="Top" Width="142" Source="graphics/splash.png">
             <Image.OpacityMask>
                 <ImageBrush ImageSource="graphics/splash.png"/>
