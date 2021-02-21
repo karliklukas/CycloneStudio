@@ -14,6 +14,7 @@ namespace CycloneStudio.structs
         private string path;
         private double marginLeft;
         private double marginTop;
+        private bool customPin;
         private List<Pin> inPins;
         private List<Pin> outPins;
 
@@ -24,6 +25,7 @@ namespace CycloneStudio.structs
         public List<Pin> OutPins { get => outPins; set => outPins = value; }
         public double MarginLeft { get => marginLeft; set => marginLeft = value; }
         public double MarginTop { get => marginTop; set => marginTop = value; }
+        public bool CustomPin { get => customPin; set => customPin = value; }
 
         public Module()
         {

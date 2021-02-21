@@ -107,7 +107,7 @@ namespace CycloneStudio.structs
         {
             MenuData data = new MenuData();
             string text = File.ReadAllText(path);
-            string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\n\\s(]+)\\);");
+            string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\n\\s(]*)\\);");
             data.Name = textSplited[1].Remove(0, 1);
             string dirPath = "..\\..\\components";
             if (isBlock)
@@ -130,32 +130,32 @@ namespace CycloneStudio.structs
                     p = p.Replace('/', System.IO.Path.DirectorySeparatorChar);
                     data.FilePath = p;
                 }
+            }            
+
+            if (textSplited.Length == 4)
+            {
+                string[] pins = Regex.Replace(textSplited[2], @"\s+", "").Split(',');
+
+                for (int i = 0; i < pins.Length; i++)
+                {
+                    if (pins[i].Contains("outputwire"))
+                    {
+                        data.OutPins.Add(pins[i].Remove(0, 10));
+                    }
+                    else if (pins[i].Contains("inputwire"))
+                    {
+                        data.InPins.Add(pins[i].Remove(0, 9));
+                    }
+                }
+
+                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d,\\s]+)(assign|wire)");
+                if (textSplitedTwo.Length > 1)
+                {
+                    string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
+                    data.HiddenPins = new List<string>(result);
+                }
             }
             
-
-            //data.FilePath = path;
-
-
-            string[] pins = Regex.Replace(textSplited[2], @"\s+", "").Split(',');
-
-            for (int i = 0; i < pins.Length; i++)
-            {
-                if (pins[i].Contains("outputwire"))
-                {
-                    data.OutPins.Add(pins[i].Remove(0, 10));                   
-                }
-                else if (pins[i].Contains("inputwire"))
-                {
-                    data.InPins.Add(pins[i].Remove(0, 9));                    
-                }
-            }
-
-            string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d,\\s]+)(assign|wire)");
-            if (textSplitedTwo.Length > 1)
-            {
-                string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
-                data.HiddenPins = new List<string>(result);
-            }
             return data;
         }
 
@@ -274,6 +274,20 @@ namespace CycloneStudio.structs
             return true;
         }
 
+        public bool BuildVerilogForBlock(List<Rectangle> modules, string name)
+        {            
+            string fileName = "c" + name + ".v";
+            string dirPathString = System.IO.Path.Combine(BLOCK_PATH, name);
+            string filePathString = System.IO.Path.Combine(dirPathString, fileName);
+            
+            Directory.CreateDirectory(dirPathString);
+            string text = CreateVerilogCode(modules, name);
+
+            File.WriteAllText(filePathString, text);            
+
+            return true;
+        }
+
         private string CreateVerilogCode(List<Rectangle> modules, string name)
         {
             HashSet<string> wires = new HashSet<string>();
@@ -302,8 +316,11 @@ namespace CycloneStudio.structs
 
             }
             middlePart.AppendLine("\nendmodule");
-
-            topPart.Remove(topPart.Length - 1, 1);
+            if (topPart[topPart.Length - 1] != '(')
+            {
+                topPart.Remove(topPart.Length - 1, 1);
+            }
+            
             topPart.AppendLine(");");
 
             hiddenPart.Remove(hiddenPart.Length - 1, 1);
@@ -325,15 +342,15 @@ namespace CycloneStudio.structs
             return topPart.ToString();
         }
 
-        private void ProcessPinsToVerilog(List<Pin> pins, HashSet<string> wires, StringBuilder middlePart, StringBuilder topPart, StringBuilder hiddenPart, string inPrefix, Module module)
+        private void ProcessPinsToVerilog(List<Pin> pins, HashSet<string> wires, StringBuilder middlePart, StringBuilder topPart, StringBuilder hiddenPart, string prefix, Module module)
         {
             foreach (Pin pin in pins)
             {
                 if (pin.Hidden)
                 {
                     middlePart.Append("." + pin.Name + "(" + pin.Name + "),");
-                    topPart.Append(inPrefix + pin.Name + ",");
-                    if (!pin.CustomPin)
+                    topPart.Append(prefix + pin.Name + ",");
+                    if (!module.CustomPin)
                         hiddenPart.Append(pin.Name + ",");
                 }
                 else
@@ -388,7 +405,7 @@ namespace CycloneStudio.structs
             }            
         }
 
-        public bool SaveProjectOrBlock(string name, SaveDataContainer container, bool isProject)
+        public bool SaveProjectOrBlock(string name, SaveDataContainer container, bool isProject, List<Module> customPins)
         {
             string path;
             if (isProject)
@@ -402,6 +419,18 @@ namespace CycloneStudio.structs
             string dirPathString = System.IO.Path.Combine(path, name);
             string filePathString = System.IO.Path.Combine(dirPathString, name + ".xml");
             Directory.CreateDirectory(dirPathString);
+
+            if (customPins.Count != 0)
+            {
+                foreach (Module module in customPins)
+                {
+                    int i = module.Path.LastIndexOf("\\");
+                    string itenName = module.Path.Remove(0, i + 1);
+                    string copyTarget = System.IO.Path.Combine(dirPathString, itenName);
+                    File.Copy(module.Path, copyTarget);
+                    module.Path = copyTarget;
+                }
+            }
 
             if (!File.Exists(filePathString))
             {

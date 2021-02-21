@@ -588,10 +588,10 @@ namespace CycloneStudio
                     IEnumerable<string> outPins = newPinData.OutPins.Except(newPinData.HiddenPins);
 
                     int pinsCount = Math.Max(inPins.Count(), outPins.Count());
-                    CreateModule(newPinData, out Module module, out Grid hlavni, 10 + pinsCount * 30);
+                    CreateModule(newPinData, out Module module, out Grid hlavni, 10 + pinsCount * 30, true);
 
-                    CreatePinsFromList(newPinData.InPins, newPinData.HiddenPins, module, hlavni, 10, 15, Types.IN, true);
-                    CreatePinsFromList(newPinData.OutPins, newPinData.HiddenPins, module, hlavni, 130, 90, Types.OUT, true);
+                    CreatePinsFromList(newPinData.InPins, newPinData.HiddenPins, module, hlavni, 10, 15, Types.IN);
+                    CreatePinsFromList(newPinData.OutPins, newPinData.HiddenPins, module, hlavni, 130, 90, Types.OUT);
 
                     hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
                     hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
@@ -617,10 +617,10 @@ namespace CycloneStudio
             IEnumerable<string> outPins = data.OutPins.Except(data.HiddenPins);
 
             int pinsCount = Math.Max(inPins.Count(), outPins.Count());
-            CreateModule(data, out Module module, out Grid hlavni, 10 + pinsCount * 30);
+            CreateModule(data, out Module module, out Grid hlavni, 10 + pinsCount * 30, false);
 
-            CreatePinsFromList(data.InPins, data.HiddenPins, module, hlavni, 10, 15, Types.IN, false);
-            CreatePinsFromList(data.OutPins, data.HiddenPins, module, hlavni, 130, 90, Types.OUT, false);
+            CreatePinsFromList(data.InPins, data.HiddenPins, module, hlavni, 10, 15, Types.IN);
+            CreatePinsFromList(data.OutPins, data.HiddenPins, module, hlavni, 130, 90, Types.OUT);
 
             hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
             hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
@@ -628,7 +628,7 @@ namespace CycloneStudio
 
         }
 
-        private void CreatePinsFromList(List<string> pinsList, List<string> hiddenPins, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, Types pinType, bool custom)
+        private void CreatePinsFromList(List<string> pinsList, List<string> hiddenPins, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, Types pinType)
         {
             int topMargin = 30;
             int count = 0;
@@ -644,9 +644,7 @@ namespace CycloneStudio
                 {
                     createdPin = CreatePin(leftMarginPin, topMargin + topMargin * count, pinType, pinName, module.Id, 50, 0);
                     hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName));
-                }
-
-                createdPin.CustomPin = custom;
+                }                
 
                 if (pinType == Types.IN)
                 {
@@ -703,7 +701,7 @@ namespace CycloneStudio
             };
         }
 
-        private void CreateModule(MenuData data, out Module module, out Grid hlavni, int height)
+        private void CreateModule(MenuData data, out Module module, out Grid hlavni, int height, bool customPin)
         {
             module = new Module
             {
@@ -711,7 +709,8 @@ namespace CycloneStudio
                 Name = data.Name,
                 Path = data.FilePath,
                 MarginLeft = 0,
-                MarginTop = 0
+                MarginTop = 0,
+                CustomPin = customPin
             };
             Rectangle g = new Rectangle
             {
@@ -1065,8 +1064,15 @@ namespace CycloneStudio
         }
 
         private void Event_SaveProject(object sender, RoutedEventArgs e)
-        {           
-            SaveProjectOrBlock(true);
+        {
+            if (isProject)
+            {
+                SaveProjectOrBlock(true);
+            }
+            else
+            {
+                MessageBox.Show("Not a project.");
+            }
         }
 
         private void Event_OpenBlock(object sender, RoutedEventArgs e)
@@ -1276,8 +1282,16 @@ namespace CycloneStudio
 
         private void Event_SaveBlock(object sender, RoutedEventArgs e)
         {
-            SaveProjectOrBlock(false);
-            //TODO path tmp u custom pinu; message pokud nejde build
+            if (isBlock)
+            {
+                SaveProjectOrBlock(false);
+                BuildVerilogCode();
+                
+            } else
+            {
+                MessageBox.Show("Not a block.");
+            }          
+            
             //TODO aktualizovat blocks?
 
         }
@@ -1329,13 +1343,19 @@ namespace CycloneStudio
                 container.WireId = wireId;
                 container.Board = choosenBoardName;
 
+                List<Module> customPins = new List<Module>();
+
                 foreach (Rectangle item in modules)
                 {
                     Module m = item.Tag as Module;
+                    if (m.CustomPin)
+                    {
+                        customPins.Add(m);                        
+                    }
                     container.Modules.Add(m);
                 }
 
-                bool success = fileControler.SaveProjectOrBlock(fileName, container, isProject);
+                bool success = fileControler.SaveProjectOrBlock(fileName, container, isProject, customPins);
 
                 if (success)
                 {
@@ -1361,6 +1381,11 @@ namespace CycloneStudio
 
         private void Event_Build(object sender, RoutedEventArgs e)
         {
+            BuildVerilogCode();           
+        }
+
+        private void BuildVerilogCode()
+        {
             if (actualProjectName == "")
             {
                 MessageBox.Show("Please save project first.");
@@ -1377,14 +1402,30 @@ namespace CycloneStudio
                 {
                     if (!pin.Connected && !pin.Hidden)
                     {
-                        MessageBox.Show("Module " + module.Id + " (" + module.Name + ") has unconnected pin " + pin.Name);
+                        if (isProject)
+                        {
+                            MessageBox.Show("Module " + module.Id + " (" + module.Name + ") has unconnected pin " + pin.Name);
+                        }
+                        else if (isBlock)
+                        {
+                            MessageBox.Show("Module " + module.Id + " (" + module.Name + ") has unconnected pin " + pin.Name + "\n" +
+                                "Fix it or you will be unable to use this module in project.");
+                        }                        
                         return;
                     }
                 }
             }
-            fileControler.BuildVerilogForProject(modules, actualProjectName, usedModules);
 
-            //fileControler.BuildVerilogForProject(modules, "nameaaa");
+            if (isProject)
+            {
+                fileControler.BuildVerilogForProject(modules, actualProjectName, usedModules);
+            }
+            else if (isBlock)
+            {
+                fileControler.BuildVerilogForBlock(modules, actualProjectName);
+            }
+
+
         }
 
         private void Event_Upload(object sender, RoutedEventArgs e)

@@ -21,7 +21,6 @@ namespace CycloneStudio.structs
         private bool connected;
         private string name_wire;
         private bool hidden;
-        private bool customPin;
         private List<PolylineTagData> activeConnections;
         private string moduleId;
         [NonSerialized]
@@ -32,7 +31,6 @@ namespace CycloneStudio.structs
         public bool Connected { get => connected; set => connected = value; }
         public string Name_wire { get => name_wire; set => name_wire = value; }
         public bool Hidden { get => hidden; set => hidden = value; }
-        public bool CustomPin { get => customPin; set => customPin = value; }
         public List<PolylineTagData> ActiveConnections { get => activeConnections; set => activeConnections = value; }
         public string ModuleId { get => moduleId; set => moduleId = value; }
         public Rectangle Rectangle { get => rectangle; set => rectangle = value; }
