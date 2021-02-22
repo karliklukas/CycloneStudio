@@ -13,12 +13,14 @@ namespace CycloneStudio.structs
         private List<string> inPins;
         private List<string> outPins;
         private List<string> hiddenPins;
+        private bool isBlock;
 
         public MenuData()
         {
             inPins = new List<string>();
             outPins = new List<string>();
             hiddenPins = new List<string>();
+            IsBlock = false;
         }
 
         public string FilePath { get => filePath; set => filePath = value; }
@@ -26,5 +28,6 @@ namespace CycloneStudio.structs
         public List<string> InPins { get => inPins; set => inPins = value; }
         public List<string> OutPins { get => outPins; set => outPins = value; }
         public List<string> HiddenPins { get => hiddenPins; set => hiddenPins = value; }
+        public bool IsBlock { get => isBlock; set => isBlock = value; }
     }
 }

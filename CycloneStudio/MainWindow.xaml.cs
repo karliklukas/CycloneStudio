@@ -60,11 +60,13 @@ namespace CycloneStudio
 
             fileControler = new FileControler(new RoutedEventHandler(MenuItemGenerateModule), new RoutedEventHandler(MenuItemCustomPin));
 
-            GenerateMenuItems();
+            //GenerateMenuItems();
             moduleId = 0;
             wireId = 0;
             actualProjectName = "";
             choosenBoardName = "";
+            isProject = true;
+            isBlock = false;
 
             modules = new List<Rectangle>();
             deactivated = new List<Rectangle>();
@@ -613,10 +615,57 @@ namespace CycloneStudio
 
             MenuData data = el.Tag as MenuData;
 
+            if (data.IsBlock)
+            {
+                int i = data.FilePath.LastIndexOf("\\");                
+                string path = data.FilePath.Remove(i);
+
+                SaveDataContainer container = fileControler.OpenSaveFile(path, data.Name);
+
+                string blockBoardName = container.Board;
+                
+                if (boardChoosen && blockBoardName != choosenBoardName)
+                {
+                    MessageBox.Show("Board used in block is different from board in project.");
+                    return;
+                }
+
+                HashSet<string> usedModulesNames = new HashSet<string>();
+
+                foreach (Module item in container.Modules)
+                {
+                    if (unenabledItems.Find(menuitem => menuitem.Header as string == item.Name) != null)
+                    {
+                        MessageBox.Show("Module " + item.Name + " is already used.");
+                        return;
+                    }
+                    else if ((boardItem.Find(menuitem => menuitem.Header as string == item.Name) != null))
+                    {
+                        MessageBox.Show("Module " + item.Name + " from board is already used.");
+                        return;
+                    }
+                    usedModulesNames.Add(item.Name);
+                }
+
+                if (!boardChoosen)
+                {
+                    choosenBoardName = container.Board;
+                    boardChoosen = choosenBoardName != "";
+                }
+                
+
+                DisableMenuItemFromSaveFile(usedModulesNames);
+            }
+
             IEnumerable<string> inPins = data.InPins.Except(data.HiddenPins);
             IEnumerable<string> outPins = data.OutPins.Except(data.HiddenPins);
 
             int pinsCount = Math.Max(inPins.Count(), outPins.Count());
+            if (pinsCount == 0)
+            {
+                pinsCount = 1;
+            }
+
             CreateModule(data, out Module module, out Grid hlavni, 10 + pinsCount * 30, false);
 
             CreatePinsFromList(data.InPins, data.HiddenPins, module, hlavni, 10, 15, Types.IN);
@@ -998,8 +1047,6 @@ namespace CycloneStudio
 
         private void LoadSaveAndSetEnviroment(string path, string name)
         {            
-            //string path = entryWindow.Path;
-            //string name = entryWindow.ProjName;
             actualProjectName = name;
             this.Title = "Cyclone Studio - " + name;
 
@@ -1209,7 +1256,8 @@ namespace CycloneStudio
                 Name = moduleSaved.Name,
                 Path = moduleSaved.Path,
                 MarginLeft = moduleSaved.MarginLeft,
-                MarginTop = moduleSaved.MarginTop
+                MarginTop = moduleSaved.MarginTop,
+                CustomPin = moduleSaved.CustomPin
             };
             Rectangle g = new Rectangle
             {

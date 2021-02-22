@@ -38,37 +38,47 @@ namespace CycloneStudio.structs
             ReadAndGenerateItems(menu, subdir);
         }
 
-        private void ReadAndGenerateItems(Menu menu, DirectoryInfo[] subdir)
+        private void ReadAndGenerateItems(Menu menu, DirectoryInfo[] directoriesList)
         {
-            foreach (DirectoryInfo sub in subdir)
+            foreach (DirectoryInfo directory in directoriesList)
             {
                 MenuItem newMenuItem = new MenuItem();
-                newMenuItem.Header = sub.Name;
+                newMenuItem.Header = directory.Name;
                 menu.Items.Add(newMenuItem);
 
-                DirectoryInfo[] innerDir = sub.GetDirectories();
-                if (innerDir.Length != 0)
+                DirectoryInfo[] innerDirList = directory.GetDirectories();
+                if (innerDirList.Length != 0)
                 {
-                    foreach (DirectoryInfo dir in innerDir)
+                    foreach (DirectoryInfo innerDirectory in innerDirList)
                     {
-                        if (sub.Name == "block" && dir.Name == "tmp")
-                        {
-                            continue;
-                        }
                         MenuItem subItem = new MenuItem();
-                        subItem.Header = dir.Name;
-                        newMenuItem.Items.Add(subItem);
+                        subItem.Header = innerDirectory.Name;
+                        
 
-                        GenerateItems(dir, subItem);
+                        if (directory.Name == "block")
+                        {
+                            if (innerDirectory.Name == "tmp")
+                                continue;
+
+                            GenerateBlockItems(innerDirectory, subItem);
+                            newMenuItem.Items.Add(subItem);
+
+                        }
+                        else
+                        {
+                            GenerateItems(innerDirectory, subItem);
+                            newMenuItem.Items.Add(subItem);
+                        }
                     }
                 }
-                if (sub.Name == "logic")
+
+                if (directory.Name == "logic")
                 {
-                    GenerateSubItems(sub, newMenuItem);
+                    GenerateSubItems(directory, newMenuItem);
                 }
                 else
                 {
-                    GenerateItems(sub, newMenuItem);
+                    GenerateItems(directory, newMenuItem);
                 }
             }
         }
@@ -103,6 +113,22 @@ namespace CycloneStudio.structs
             }
         }
 
+        private void GenerateBlockItems(DirectoryInfo sub, MenuItem newMenuItem)
+        {
+            FileInfo[] Files = sub.GetFiles("*.v");
+            FileInfo mainFile = Files.ToList().Find(file => TrimModuleName(file) == sub.Name);
+            if (mainFile == null)
+            {
+                newMenuItem.IsEnabled = false;
+                return;
+            }
+
+            MenuData data = ReadAndProcessFile(mainFile.FullName, false);
+            newMenuItem.Tag = data;
+            newMenuItem.Click += eventHandler;
+
+        }
+
         private MenuData ReadAndProcessFile(string path, bool isBlock)
         {
             MenuData data = new MenuData();
@@ -130,7 +156,12 @@ namespace CycloneStudio.structs
                     p = p.Replace('/', System.IO.Path.DirectorySeparatorChar);
                     data.FilePath = p;
                 }
-            }            
+            }
+
+            if (data.FilePath.Contains("\\block\\"))
+            {
+                data.IsBlock = true;
+            }
 
             if (textSplited.Length == 4)
             {
