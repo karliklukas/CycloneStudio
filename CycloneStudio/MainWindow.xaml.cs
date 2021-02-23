@@ -170,6 +170,11 @@ namespace CycloneStudio
                 Module module = (Module)rec.Tag;
                 ActivateMenuItem(module.Name);
 
+                foreach (string moduleUsedName in module.ModulesUsedInBlock)
+                {
+                    ActivateMenuItem(moduleUsedName);
+                }                
+
                 DeleteModulesPinsAndConnections(module.InPins);
                 DeleteModulesPinsAndConnections(module.OutPins);
 
@@ -579,10 +584,14 @@ namespace CycloneStudio
             if (dialog.ShowDialog() == true)
             {
                 string pinName = dialog.ResponseText;
+                if (System.Text.RegularExpressions.Regex.IsMatch(pinName, "(IN_PIN(2[0]|1[0-9]|[1-9])?|OUT_PIN(2[0]|1[0-9]|[1-9])?)$"))
+                {
+                    MessageBox.Show("Sorry not allowed name.");
+                    return;
+                }
 
                 MenuData data = el.Tag as MenuData;
-                MenuData newPinData;
-                bool success = fileControler.SavaCustomPin(actualProjectName, pinName, data.FilePath, out newPinData);
+                bool success = fileControler.SavaCustomPin(actualProjectName, pinName, data.FilePath, out MenuData newPinData);
 
                 if (success)
                 {
@@ -614,47 +623,17 @@ namespace CycloneStudio
             DeactivateMenuItem(el);
 
             MenuData data = el.Tag as MenuData;
+            HashSet<string> usedModulesNames = new HashSet<string>();
+            HashSet<string> usedModulesPaths = new HashSet<string>();
 
             if (data.IsBlock)
             {
-                int i = data.FilePath.LastIndexOf("\\");                
-                string path = data.FilePath.Remove(i);
+                bool compatible = CheckBlockCompatibility(data, usedModulesNames, usedModulesPaths);
 
-                SaveDataContainer container = fileControler.OpenSaveFile(path, data.Name);
-
-                string blockBoardName = container.Board;
-                
-                if (boardChoosen && blockBoardName != choosenBoardName)
+                if (!compatible)
                 {
-                    MessageBox.Show("Board used in block is different from board in project.");
                     return;
                 }
-
-                HashSet<string> usedModulesNames = new HashSet<string>();
-
-                foreach (Module item in container.Modules)
-                {
-                    if (unenabledItems.Find(menuitem => menuitem.Header as string == item.Name) != null)
-                    {
-                        MessageBox.Show("Module " + item.Name + " is already used.");
-                        return;
-                    }
-                    else if ((boardItem.Find(menuitem => menuitem.Header as string == item.Name) != null))
-                    {
-                        MessageBox.Show("Module " + item.Name + " from board is already used.");
-                        return;
-                    }
-                    usedModulesNames.Add(item.Name);
-                }
-
-                if (!boardChoosen)
-                {
-                    choosenBoardName = container.Board;
-                    boardChoosen = choosenBoardName != "";
-                }
-                
-
-                DisableMenuItemFromSaveFile(usedModulesNames);
             }
 
             IEnumerable<string> inPins = data.InPins.Except(data.HiddenPins);
@@ -667,6 +646,8 @@ namespace CycloneStudio
             }
 
             CreateModule(data, out Module module, out Grid hlavni, 10 + pinsCount * 30, false);
+            module.ModulesUsedInBlock.UnionWith(usedModulesNames);
+            module.ModulesPathUsedInBlock.UnionWith(usedModulesPaths);
 
             CreatePinsFromList(data.InPins, data.HiddenPins, module, hlavni, 10, 15, Types.IN);
             CreatePinsFromList(data.OutPins, data.HiddenPins, module, hlavni, 130, 90, Types.OUT);
@@ -675,6 +656,47 @@ namespace CycloneStudio
             hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
 
 
+        }
+
+        private bool CheckBlockCompatibility(MenuData data, HashSet<string> usedModulesNames, HashSet<string> usedModulesPaths)
+        {
+            int i = data.FilePath.LastIndexOf("\\");
+            string path = data.FilePath.Remove(i);
+
+            SaveDataContainer container = fileControler.OpenSaveFile(path, data.Name);
+
+            string blockBoardName = container.Board;
+
+            if (boardChoosen && blockBoardName != choosenBoardName)
+            {
+                MessageBox.Show("Board used in block is different from board in project.");
+                return false;
+            }
+
+            foreach (Module item in container.Modules)
+            {
+                if (unenabledItems.Find(menuitem => menuitem.Header as string == item.Name) != null)
+                {
+                    MessageBox.Show("Module " + item.Name + " is already used.");
+                    return false;
+                }
+                else if ((boardItem.Find(menuitem => menuitem.Header as string == item.Name) != null))
+                {
+                    MessageBox.Show("Module " + item.Name + " from board is already used.");
+                    return false;
+                }
+                usedModulesNames.Add(item.Name);
+                usedModulesPaths.Add(item.Path);
+            }
+
+            if (!boardChoosen)
+            {
+                choosenBoardName = container.Board;
+                boardChoosen = choosenBoardName != "";
+            }
+            
+            DisableMenuItemFromSaveFile(usedModulesNames);
+            return true;
         }
 
         private void CreatePinsFromList(List<string> pinsList, List<string> hiddenPins, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, Types pinType)
@@ -1162,6 +1184,11 @@ namespace CycloneStudio
                 int outPins = outPinsList.Count();
                 usedModulesNames.Add(item.Name);
 
+                if (item.ModulesUsedInBlock.Count != 0)
+                {
+                    usedModulesNames.UnionWith(item.ModulesUsedInBlock);
+                }
+
                 activeOutPins.AddRange(outPinsList.FindAll(pin => pin.Connected == true));
 
                 int pinsCount = Math.Max(inPins, outPins);
@@ -1257,7 +1284,9 @@ namespace CycloneStudio
                 Path = moduleSaved.Path,
                 MarginLeft = moduleSaved.MarginLeft,
                 MarginTop = moduleSaved.MarginTop,
-                CustomPin = moduleSaved.CustomPin
+                CustomPin = moduleSaved.CustomPin,
+                ModulesUsedInBlock = moduleSaved.ModulesUsedInBlock,
+                ModulesPathUsedInBlock = moduleSaved.ModulesPathUsedInBlock
             };
             Rectangle g = new Rectangle
             {
@@ -1359,6 +1388,11 @@ namespace CycloneStudio
                 dialogTextSmall = "block";
             }
             var dialog = new InputDialog(dialogTextBig +" name", "Enter "+ dialogTextSmall + " name:");
+            if (actualProjectName != "")
+            {
+                dialog.ResponseText = actualProjectName;
+            }
+
             if (dialog.ShowDialog() == true)
             {
                 string fileName = dialog.ResponseText;
@@ -1440,11 +1474,16 @@ namespace CycloneStudio
                 return;
             }
 
-            HashSet<string> usedModules = new HashSet<string>();
+            HashSet<string> usedModulesPath = new HashSet<string>();
             foreach (Rectangle rectangle in modules)
             {
                 Module module = rectangle.Tag as Module;
-                usedModules.Add(module.Path);
+                usedModulesPath.Add(module.Path);
+
+                if (module.ModulesPathUsedInBlock.Count != 0)
+                {
+                    usedModulesPath.UnionWith(module.ModulesPathUsedInBlock);
+                }
 
                 foreach (Pin pin in module.InPins)
                 {
@@ -1466,7 +1505,7 @@ namespace CycloneStudio
 
             if (isProject)
             {
-                fileControler.BuildVerilogForProject(modules, actualProjectName, usedModules);
+                fileControler.BuildVerilogForProject(modules, actualProjectName, usedModulesPath);
             }
             else if (isBlock)
             {

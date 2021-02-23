@@ -15,6 +15,8 @@ namespace CycloneStudio.structs
         private double marginLeft;
         private double marginTop;
         private bool customPin;
+        private HashSet<string> modulesUsedInBlock;
+        private HashSet<string> modulesPathUsedInBlock;
         private List<Pin> inPins;
         private List<Pin> outPins;
 
@@ -26,11 +28,15 @@ namespace CycloneStudio.structs
         public double MarginLeft { get => marginLeft; set => marginLeft = value; }
         public double MarginTop { get => marginTop; set => marginTop = value; }
         public bool CustomPin { get => customPin; set => customPin = value; }
+        public HashSet<string> ModulesUsedInBlock { get => modulesUsedInBlock; set => modulesUsedInBlock = value; }
+        public HashSet<string> ModulesPathUsedInBlock { get => modulesPathUsedInBlock; set => modulesPathUsedInBlock = value; }
 
         public Module()
         {
             InPins = new List<Pin>();
             OutPins = new List<Pin>();
+            modulesPathUsedInBlock = new HashSet<string>();
+            modulesUsedInBlock = new HashSet<string>();
         }
     }
 }
