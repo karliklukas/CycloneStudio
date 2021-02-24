@@ -602,10 +602,10 @@ namespace CycloneStudio
                     CreateModule(newPinData, out Module module, out Grid hlavni, 10 + pinsCount * 30, true);
 
                     CreatePinsFromList(newPinData.InPins, newPinData.HiddenPins, module, hlavni, 10, 15, Types.IN);
-                    CreatePinsFromList(newPinData.OutPins, newPinData.HiddenPins, module, hlavni, 130, 90, Types.OUT);
+                    CreatePinsFromList(newPinData.OutPins, newPinData.HiddenPins, module, hlavni, 130, 45, Types.OUT);
 
-                    hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
-                    hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
+                    hlavni.Children.Add(CreateTextBlock(30, 0, module.Name, HorizontalAlignment.Center));
+                    hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id, HorizontalAlignment.Left));
                 }
                 else
                 {
@@ -650,10 +650,10 @@ namespace CycloneStudio
             module.ModulesPathUsedInBlock.UnionWith(usedModulesPaths);
 
             CreatePinsFromList(data.InPins, data.HiddenPins, module, hlavni, 10, 15, Types.IN);
-            CreatePinsFromList(data.OutPins, data.HiddenPins, module, hlavni, 130, 90, Types.OUT);
+            CreatePinsFromList(data.OutPins, data.HiddenPins, module, hlavni, 130, 45, Types.OUT);
 
-            hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
-            hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
+            hlavni.Children.Add(CreateTextBlock(30, 0, module.Name, HorizontalAlignment.Center));
+            hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id, HorizontalAlignment.Left));
 
 
         }
@@ -714,7 +714,12 @@ namespace CycloneStudio
                 else
                 {
                     createdPin = CreatePin(leftMarginPin, topMargin + topMargin * count, pinType, pinName, module.Id, 50, 0);
-                    hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName));
+                    HorizontalAlignment alignment = HorizontalAlignment.Left;
+                    if (pinType == Types.OUT)
+                    {
+                        alignment = HorizontalAlignment.Right;
+                    }
+                    hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName, alignment));
                 }                
 
                 if (pinType == Types.IN)
@@ -761,12 +766,25 @@ namespace CycloneStudio
             }
         }
 
-        private static TextBlock CreateTextBlock(int marginLeft, int marginTop, string text)
+        private static Label CreateTextBlock(int marginLeft, int marginTop, string text, HorizontalAlignment alignment)
         {
-            return new TextBlock
+            /*return new TextBlock
             {
                 Text = text,
                 Foreground = Brushes.Black,
+                FontSize = 9,
+                Margin = new Thickness(marginLeft, marginTop, 0, 0)
+            };*/
+            return new Label
+            {
+                Content = text,
+                Foreground = Brushes.Black,
+                Width = 60,
+                Height = 15,
+                Padding = new Thickness(0,0,0,0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                HorizontalContentAlignment = alignment,
                 FontSize = 9,
                 Margin = new Thickness(marginLeft, marginTop, 0, 0)
             };
@@ -797,6 +815,20 @@ namespace CycloneStudio
                 Effect = GetShadowEffect()
 
             };
+            Image myImage = new Image
+            {
+                Height = 20,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
+            BitmapImage myBitmapImage = new BitmapImage();          
+            myBitmapImage.BeginInit();
+            myBitmapImage.UriSource = new Uri(@"C:\Users\Spektrom\Desktop\icon.png");           
+            myBitmapImage.DecodePixelHeight = 20;
+            myBitmapImage.EndInit();
+           
+            myImage.Source = myBitmapImage;
+
+
             hlavni = new Grid
             {
                 Margin = new Thickness(20, 20, 0, 0),
@@ -813,6 +845,7 @@ namespace CycloneStudio
 
             hlavni.Children.Add(g);
             modules.Add(g);
+            hlavni.Children.Add(myImage);
 
             hlavni.MouseEnter += EventMouseOverGrid;
             hlavni.MouseLeave += EventMouseLeaveGrid;
@@ -1195,10 +1228,10 @@ namespace CycloneStudio
                 CreateModuleFromSave(item, out Module module, out Grid hlavni, 10 + pinsCount * 30);
 
                 CreatePinsFromListSave(item.InPins, module, hlavni, 10, 15, Types.IN);
-                CreatePinsFromListSave(item.OutPins, module, hlavni, 130, 90, Types.OUT);
+                CreatePinsFromListSave(item.OutPins, module, hlavni, 130, 45, Types.OUT);
 
-                hlavni.Children.Add(CreateTextBlock(40, 5, module.Name));
-                hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id));
+                hlavni.Children.Add(CreateTextBlock(30, 0, module.Name, HorizontalAlignment.Center));
+                hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id, HorizontalAlignment.Left));
             }
 
             RestoreConnectionsFromSave(activeOutPins);
@@ -1302,6 +1335,19 @@ namespace CycloneStudio
                 Effect = GetShadowEffect()
 
             };
+            Image myImage = new Image
+            {
+                Height = 19,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
+            BitmapImage myBitmapImage = new BitmapImage();
+            myBitmapImage.BeginInit();
+            myBitmapImage.UriSource = new Uri(@"C:\Users\Spektrom\Desktop\CycloneStudio\displej.png");
+            myBitmapImage.DecodePixelHeight = 20;
+            myBitmapImage.EndInit();
+
+            myImage.Source = myBitmapImage;
+
             hlavni = new Grid
             {
                 Margin = new Thickness(20, 20, 0, 0),
@@ -1315,8 +1361,9 @@ namespace CycloneStudio
             Canvas.SetTop(hlavni, module.MarginTop);
 
             Panel.SetZIndex(hlavni, 1);
-
+            
             hlavni.Children.Add(g);
+            hlavni.Children.Add(myImage);
             modules.Add(g);
 
             hlavni.MouseEnter += EventMouseOverGrid;
@@ -1343,7 +1390,12 @@ namespace CycloneStudio
                 else
                 {
                     createdPin = CreatePin(leftMarginPin, topMargin + topMargin * count, pinType, pinName.Name, module.Id, module.MarginLeft, module.MarginTop);
-                    hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName.Name));
+                    HorizontalAlignment alignment = HorizontalAlignment.Left;
+                    if (pinType == Types.OUT)
+                    {
+                        alignment = HorizontalAlignment.Right;
+                    }
+                    hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName.Name, alignment));
                 }
 
                 if (pinType == Types.IN)
