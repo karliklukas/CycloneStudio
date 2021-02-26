@@ -1,0 +1,14 @@
+﻿<Window x:Class="CycloneStudio.PreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CycloneStudio"
+        mc:Ignorable="d"
+        Title="PreviewWindow" ResizeMode="NoResize" WindowStyle="ToolWindow" SizeToContent="WidthAndHeight">
+    <Grid x:Name="someGrid" Background="#FFCBCBCB">
+        <Image x:Name="imageView" Margin="0" />
+        <TextBlock x:Name="arrowPointer" HorizontalAlignment="Left" Margin="254,174,0,0" TextWrapping="Wrap" Text="&#129105;" VerticalAlignment="Top" Foreground="#FFF3FF00" FontSize="72" Height="90"/>
+
+    </Grid>
+</Window>

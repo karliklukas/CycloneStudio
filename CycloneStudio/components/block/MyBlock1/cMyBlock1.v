@@ -1,13 +1,14 @@
-module cMyBlock1(input wire KEY1,input wire Cst1,output wire out1,output wire LED1);
-//hidden: KEY1,LED1
+module cMyBlock1(input wire Adsd,output wire TTre);
+//hidden:
 
-wire w1,w2,w3;
+wire w4,w2,w6,w7,w3,w5;
 
-cKEY1 b1(.KEY1(KEY1),.OUT(w1));
-cCst1 b2(.Cst1(Cst1),.IN(w2));
-cAND2 b3(.A(w1),.B(w2),.Y(w3));
-cout1 b4(.OUT(w3),.out1(out1));
-cLED1 b5(.IN(w3),.LED1(LED1));
+cAdsd b1(.Adsd(Adsd),.IN(w4));
+cTTre b2(.OUT(w2),.TTre(TTre));
+cAND2 b3(.A(w6),.B(w7),.Y(w2));
+cZERO b4(.Y(w3));
+cMERGE2 b5(.BUS0(w4),.BUS1(w3),.BUS[1:0](w5));
+cSPLIT2 b6(.BUS[1:0](w5),.BUS0(w6),.BUS1(w7));
 
 endmodule
 

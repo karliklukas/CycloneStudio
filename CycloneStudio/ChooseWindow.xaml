@@ -1,4 +1,4 @@
-﻿<Window x:Class="CycloneStudio.EntryWindow"
+﻿<Window x:Class="CycloneStudio.ChooseWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,11 +7,8 @@
         mc:Ignorable="d"
         Title="CycloneStudio" Height="360" Width="467" WindowStyle="ToolWindow" ResizeMode="NoResize">
     <Grid>
-        <Separator HorizontalAlignment="Left" Height="100" Margin="331,172,0,0" VerticalAlignment="Top" Width="75"/>
-        <Separator HorizontalAlignment="Left" Height="100" Margin="331,81,0,0" VerticalAlignment="Top" Width="75"/>
-        <Separator HorizontalAlignment="Left" Height="100" Margin="331,232,0,0" VerticalAlignment="Top" Width="75"/>
-        <Button x:Name="CloseBtn" Content="Close" HorizontalAlignment="Left" Margin="331,288,0,0" VerticalAlignment="Top" Width="75" Click="Event_Close" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
-        <Button x:Name="NewBtn" Content="New project" HorizontalAlignment="Left" Margin="331,230,0,0" VerticalAlignment="Top" Width="75" Click="Event_NewProject" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
+        <Button x:Name="CloseBtn" Content="Close" HorizontalAlignment="Left" Margin="355,290,0,0" VerticalAlignment="Top" Width="75" Click="Event_Close" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
+        <Button x:Name="NewBtn" Content="New" HorizontalAlignment="Left" Margin="355,254,0,0" VerticalAlignment="Top" Width="75" Click="Event_NewProject" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
         <ListView x:Name="listViewProjects" HorizontalAlignment="Left" Height="284" Margin="10,26,0,0" VerticalAlignment="Top" Width="272" SelectionMode="Single" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
             <ListView.View>
                 <GridView AllowsColumnReorder="False">
@@ -31,20 +28,14 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <Button x:Name="OpenBtn" Content="Open project" HorizontalAlignment="Left" Margin="331,195,0,0" VerticalAlignment="Top" Width="75" Click="Event_OpenProject" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
+        <Button x:Name="OpenBtn" Content="Open" HorizontalAlignment="Left" Margin="355,218,0,0" VerticalAlignment="Top" Width="75" Click="Event_OpenProject" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
         <Label x:Name="HeaderLabel" Content="Projects" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="110" FontWeight="Bold"/>
-        <Image HorizontalAlignment="Left" Height="100" Margin="303,34,0,0" VerticalAlignment="Top" Width="142" Source="graphics/splash.png">
+        <Image HorizontalAlignment="Left" Height="100" Margin="303,35,0,0" VerticalAlignment="Top" Width="142" Source="graphics/splash.png">
             <Image.OpacityMask>
                 <ImageBrush ImageSource="graphics/splash.png"/>
             </Image.OpacityMask>
         </Image>
         <Label Content="Welcome to" HorizontalAlignment="Left" Margin="314,10,0,0" VerticalAlignment="Top" Width="116" FontWeight="Bold" FontSize="18"/>
-        <RadioButton x:Name="radioProject" Content="Projects" HorizontalAlignment="Left" Margin="331,154,0,0" VerticalAlignment="Top" GroupName="Type" Checked="Event_ProjChecked"/>
-        <RadioButton Content="Blocks" HorizontalAlignment="Left" Margin="331,174,0,0" VerticalAlignment="Top" GroupName="Type" Checked="Event_BlockChecked"/>
-        <Button x:Name="NewBtnBlck" Content="New block" HorizontalAlignment="Left" Margin="331,257,0,0" VerticalAlignment="Top" Width="75" Click="Event_NewBlock" BorderBrush="{DynamicResource {x:Static SystemColors.MenuHighlightBrushKey}}"/>
-        
-        <Label Content="Choose:" HorizontalAlignment="Left" Margin="326,128,0,0" VerticalAlignment="Top" FontWeight="Bold"/>
 
     </Grid>
 </Window>
-

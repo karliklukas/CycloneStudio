@@ -19,6 +19,7 @@ namespace CycloneStudio.structs
         private HashSet<string> modulesPathUsedInBlock;
         private List<Pin> inPins;
         private List<Pin> outPins;
+        private BoardInfo boardInfo;
 
         public string Name { get => name; set => name = value; }
         public string Id { get => id; set => id = value; }
@@ -30,6 +31,7 @@ namespace CycloneStudio.structs
         public bool CustomPin { get => customPin; set => customPin = value; }
         public HashSet<string> ModulesUsedInBlock { get => modulesUsedInBlock; set => modulesUsedInBlock = value; }
         public HashSet<string> ModulesPathUsedInBlock { get => modulesPathUsedInBlock; set => modulesPathUsedInBlock = value; }
+        internal BoardInfo BoardInfo { get => boardInfo; set => boardInfo = value; }
 
         public Module()
         {

@@ -133,7 +133,7 @@ namespace CycloneStudio.structs
         {
             MenuData data = new MenuData();
             string text = File.ReadAllText(path);
-            string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\n\\s(]*)\\);");
+            string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\]\\[:\\n\\s(]*)\\);");
             data.Name = textSplited[1].Remove(0, 1);
             string dirPath = "..\\..\\components";
             if (isBlock)
@@ -179,11 +179,19 @@ namespace CycloneStudio.structs
                     }
                 }
 
-                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d,\\s]+)(assign|wire)");
+                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d,\\s]+)(assign|wire|\\/\\/position:\\s((\\d{1,3}),(\\d{1,3}),(\\w*)))");//TODO board image
                 if (textSplitedTwo.Length > 1)
                 {
                     string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
                     data.HiddenPins = new List<string>(result);
+                    if (textSplitedTwo[2].Contains("position"))
+                    {
+                        data.BoardInfo = new BoardInfo {
+                            MarginLeft = Int32.Parse(textSplitedTwo[4]),
+                            MarginTop = Int32.Parse(textSplitedTwo[5]),
+                            BoardName = textSplitedTwo[6]
+                        };
+                    }
                 }
             }
             

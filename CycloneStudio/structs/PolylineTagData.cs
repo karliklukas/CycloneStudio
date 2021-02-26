@@ -70,8 +70,8 @@ namespace CycloneStudio.structs
         }
 
         [NonSerialized]
-        private Polyline polyline;
-        public Polyline Polyline
+        private Path polyline;
+        public Path Polyline
         {
             get { return polyline; }
             set { polyline = value; }

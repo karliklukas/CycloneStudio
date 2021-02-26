@@ -18,6 +18,7 @@ using CycloneStudio.structs;
 using Microsoft.Win32;
 using System.Runtime.Serialization;
 using System.Xml;
+using System.Text.RegularExpressions;
 
 namespace CycloneStudio
 {
@@ -84,22 +85,23 @@ namespace CycloneStudio
             canvas.Height = SystemParameters.PrimaryScreenHeight -94;
             canvas.Width = SystemParameters.PrimaryScreenWidth;            
 
-            ContentRendered += Window_ContentRendered;
-        }
+            ContentRendered += Window_ContentRendered;    
+            
+        }      
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            EntryWindow entryWindow = new EntryWindow(true);
+            EntryWindow entryWindow = new EntryWindow();
             entryWindow.Owner = this;
             if (entryWindow.ShowDialog() == true)
             {
                 if (entryWindow.Confirm)
                 {
-                    ClearAll(true, false);
+                    ClearAll(entryWindow.isProject, entryWindow.isBlock);
                 }
                 else
                 {
-                    ClearAll(true, false);
+                    ClearAll(entryWindow.isProject, entryWindow.isBlock);
                     LoadSaveAndSetEnviroment(entryWindow.Path, entryWindow.ProjName);
                 }
             }
@@ -232,7 +234,7 @@ namespace CycloneStudio
                         iopin = (Pin)data.RecPinIn.Tag;
                     }
 
-                    Polyline poly = data.Polyline;
+                    System.Windows.Shapes.Path poly = data.Polyline;
                     Label label = (Label)poly.Tag;
 
                     iopin.ActiveConnections.Remove(data);
@@ -273,6 +275,18 @@ namespace CycloneStudio
 
             PinsRestoreLines(module.InPins);
             PinsRestoreLines(module.OutPins);
+        }
+
+        private void Module_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_isLineDrag || handToggle.IsChecked == false) return;
+            
+            Grid el = (Grid)sender;
+            Rectangle rec = (Rectangle)el.Tag;
+            Module module = (Module)rec.Tag;
+            PreviewWindow previewWindow = new PreviewWindow(module.BoardInfo.MarginLeft, module.BoardInfo.MarginTop, module.BoardInfo.BoardName);
+            previewWindow.ShowDialog();
+            
         }
 
         private void Module_MouseMove(object sender, MouseEventArgs e)
@@ -375,25 +389,46 @@ namespace CycloneStudio
 
                 foreach (Pin p in m.InPins)
                 {
-                    if (startPinType != Types.IN && !pinInfo.CompareConnections(p.Rectangle) && sameModule && p.ActiveConnections.Count == 0)
+                    if (startPinType != Types.IN && !pinInfo.CompareConnections(p.Rectangle) && sameModule && p.ActiveConnections.Count == 0 && (pinInfo.IsBus == p.IsBus))
                     {
-                        p.Rectangle.StrokeThickness = 2;
-                        highlighted.Add(p.Rectangle);
-                        continue;
+                        if (pinInfo.BusType == p.BusType)
+                        {
+                            p.Rectangle.StrokeThickness = 2;
+                            highlighted.Add(p.Rectangle);
+                        }
+                        else
+                        {
+                            p.Rectangle.IsHitTestVisible = false;
+                            deactivated.Add(p.Rectangle);
+                        }
                     }
-                    p.Rectangle.IsHitTestVisible = false;
-                    deactivated.Add(p.Rectangle);
+                    else
+                    {
+                        p.Rectangle.IsHitTestVisible = false;
+                        deactivated.Add(p.Rectangle);
+                    }
+                    
                 }
                 foreach (Pin p in m.OutPins)
                 {
-                    if (startPinType != Types.OUT && !pinInfo.CompareConnections(p.Rectangle) && sameModule)
+                    if (startPinType != Types.OUT && !pinInfo.CompareConnections(p.Rectangle) && sameModule && (pinInfo.IsBus == p.IsBus))
                     {
-                        p.Rectangle.StrokeThickness = 2;
-                        highlighted.Add(p.Rectangle);
-                        continue;
+                        if (pinInfo.BusType == p.BusType)
+                        {
+                            p.Rectangle.StrokeThickness = 2;
+                            highlighted.Add(p.Rectangle);
+                        }
+                        else
+                        {
+                            p.Rectangle.IsHitTestVisible = false;
+                            deactivated.Add(p.Rectangle);
+                        }                       
                     }
-                    p.Rectangle.IsHitTestVisible = false;
-                    deactivated.Add(p.Rectangle);
+                    else
+                    {
+                        p.Rectangle.IsHitTestVisible = false;
+                        deactivated.Add(p.Rectangle);
+                    }
                 }
             }
         }
@@ -545,7 +580,7 @@ namespace CycloneStudio
         {
             if (deleteToggle.IsChecked == true)
             {
-                Polyline poly = (Polyline)sender;
+                System.Windows.Shapes.Path poly = (System.Windows.Shapes.Path)sender;
                 if (!poly.IsHitTestVisible)
                 {
                     return;
@@ -561,7 +596,7 @@ namespace CycloneStudio
         {
             if (deleteToggle.IsChecked == true)
             {
-                Polyline poly = (Polyline)sender;
+                System.Windows.Shapes.Path poly = (System.Windows.Shapes.Path)sender;
                 poly.StrokeThickness = 2;
                 poly.Stroke = Brushes.Black;
                 if (this.Cursor != Cursors.Wait)
@@ -584,7 +619,7 @@ namespace CycloneStudio
             if (dialog.ShowDialog() == true)
             {
                 string pinName = dialog.ResponseText;
-                if (System.Text.RegularExpressions.Regex.IsMatch(pinName, "(IN_PIN(2[0]|1[0-9]|[1-9])?|OUT_PIN(2[0]|1[0-9]|[1-9])?)$"))
+                if (Regex.IsMatch(pinName, "(IN_PIN(2[0]|1[0-9]|[1-9])?|OUT_PIN(2[0]|1[0-9]|[1-9])?)$"))
                 {
                     MessageBox.Show("Sorry not allowed name.");
                     return;
@@ -707,6 +742,7 @@ namespace CycloneStudio
             foreach (string pinName in pinsList)
             {
                 Pin createdPin;
+                
                 if (hiddenPins.Contains(pinName))
                 {
                     createdPin = CreateHiddenPin(pinType, pinName, module.Id);
@@ -714,6 +750,13 @@ namespace CycloneStudio
                 else
                 {
                     createdPin = CreatePin(leftMarginPin, topMargin + topMargin * count, pinType, pinName, module.Id, 50, 0);
+                    string[] textSplited = Regex.Split(pinName, "([\\d\\w]*)(\\[\\d{1}:\\d{1}\\])");
+                    if (textSplited.Length > 3)
+                    {
+                        createdPin.IsBus = true;
+                        createdPin.BusType = textSplited[2];
+                    }
+
                     HorizontalAlignment alignment = HorizontalAlignment.Left;
                     if (pinType == Types.OUT)
                     {
@@ -799,7 +842,8 @@ namespace CycloneStudio
                 Path = data.FilePath,
                 MarginLeft = 0,
                 MarginTop = 0,
-                CustomPin = customPin
+                CustomPin = customPin,
+                BoardInfo = data.BoardInfo
             };
             Rectangle g = new Rectangle
             {
@@ -814,20 +858,7 @@ namespace CycloneStudio
                 Tag = module,
                 Effect = GetShadowEffect()
 
-            };
-            Image myImage = new Image
-            {
-                Height = 20,
-                Margin = new Thickness(0, 0, 0, 0)
-            };
-            BitmapImage myBitmapImage = new BitmapImage();          
-            myBitmapImage.BeginInit();
-            myBitmapImage.UriSource = new Uri(@"C:\Users\Spektrom\Desktop\icon.png");           
-            myBitmapImage.DecodePixelHeight = 20;
-            myBitmapImage.EndInit();
-           
-            myImage.Source = myBitmapImage;
-
+            };            
 
             hlavni = new Grid
             {
@@ -845,7 +876,13 @@ namespace CycloneStudio
 
             hlavni.Children.Add(g);
             modules.Add(g);
-            hlavni.Children.Add(myImage);
+            if (data.BoardInfo != null)
+            {
+                Image myImage = CreateQuestionMarkImage(height);
+                hlavni.Children.Add(myImage);
+                hlavni.MouseRightButtonUp += Module_MouseRightButtonUp;
+            }
+            
 
             hlavni.MouseEnter += EventMouseOverGrid;
             hlavni.MouseLeave += EventMouseLeaveGrid;
@@ -854,6 +891,25 @@ namespace CycloneStudio
             hlavni.MouseMove += Module_MouseMove;
 
             canvas.Children.Add(hlavni);
+        }
+
+        private static Image CreateQuestionMarkImage(int height)
+        {
+            Image myImage = new Image
+            {
+                Height = 20,
+                Margin = new Thickness(50, height - 25, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top
+            };
+            BitmapImage myBitmapImage = new BitmapImage();
+            myBitmapImage.BeginInit();
+            myBitmapImage.UriSource = new Uri(@"graphics/more.png", UriKind.RelativeOrAbsolute);
+            myBitmapImage.DecodePixelHeight = 20;
+            myBitmapImage.EndInit();
+
+            myImage.Source = myBitmapImage;
+            return myImage;
         }
 
         private Pin CreatePin(int MarginLeft, int MarginTop, Types pinType, string name, string id, double marginLeft, double marginTop)
@@ -980,7 +1036,7 @@ namespace CycloneStudio
             e.Handled = true;
         }
 
-        private Polyline GenerateLine(double startX, double startY, double endX, double endY, string name, PolylineTagData data)
+        private System.Windows.Shapes.Path GenerateLine(double startX, double startY, double endX, double endY, string name, PolylineTagData data)
         {
             if (startX >= endX)
             {
@@ -1014,23 +1070,99 @@ namespace CycloneStudio
                 Point4,
                 Point5
             };
-
+            SolidColorBrush c = new SolidColorBrush
+            {
+                Opacity = 0.8,
+                Color = Color.FromRgb(255, 255, 255)
+            };
             Label text = new Label
             {
                 Content = name,
-                Tag = data
+                Tag = data                
             };
             polyline.Tag = text;
-            Canvas.SetLeft(text, startX + 10);
-            Canvas.SetTop(text, startY - 25);
+
+            int topMarginCorrection=0;
+            if (startY > endY && Math.Abs(startY - endY) > 100)
+            {
+                topMarginCorrection = 0;
+            }
+
+            Canvas.SetLeft(text, startX + 8);
+            Canvas.SetTop(text, startY - (25 - topMarginCorrection));
 
             polyline.Points = polygonPoints;
 
-            canvas.Children.Add(polyline);
+            //canvas.Children.Add(polyline);
             canvas.Children.Add(text);
+            ///////////////////////////////////////////
+            //Console.WriteLine(distance);
+            double dis2 = 0;
+            if (distance < 90)
+            {
+                dis2 = distance/3;
+            }
+            if (distance < 70)
+            {
+                dis2 = distance / 2;
+            }
+            if (distance < 55)
+            {
+                dis2 = 60;
+            }
 
-            return polyline;
+            Point[] points = new[] {
+            new Point(startX, startY),
+            new Point(startX+(70-dis2), startY),
+            new Point(endX-(70-dis2), endY),
+            new Point(endX, endY)
+            };
 
+            PolyLineSegment b = GetBezierApproximation(points, 256);
+            PathFigure pf = new PathFigure(b.Points[0], new[] { b }, false);
+
+            PathFigureCollection pfc = new PathFigureCollection();
+            pfc.Add(pf);
+
+            PathGeometry pge = new PathGeometry();
+            pge.Figures = pfc;
+
+            System.Windows.Shapes.Path p = new System.Windows.Shapes.Path
+            {
+                Effect = GetShadowEffect(),
+                Data = pge,
+                Stroke = new SolidColorBrush(Colors.Black),
+                StrokeThickness = 2,
+                Tag = text
+            };
+
+            p.MouseLeftButtonUp += Poly_MouseLeftButtonUp;
+            p.MouseEnter += EventMouseOverLine;
+            p.MouseLeave += EventMouseLeaveLine;
+
+            canvas.Children.Add(p);
+            //return polyline;
+            return p;
+        }
+
+        PolyLineSegment GetBezierApproximation(Point[] controlPoints, int outputSegmentCount)
+        {
+            Point[] points = new Point[outputSegmentCount + 1];
+            for (int i = 0; i <= outputSegmentCount; i++)
+            {
+                double t = (double)i / outputSegmentCount;
+                points[i] = GetBezierPoint(t, controlPoints, 0, controlPoints.Length);
+            }
+            return new PolyLineSegment(points, true);
+        }
+
+        Point GetBezierPoint(double t, Point[] controlPoints, int index, int count)
+        {
+            if (count == 1)
+                return controlPoints[index];
+            var P0 = GetBezierPoint(t, controlPoints, index, count - 1);
+            var P1 = GetBezierPoint(t, controlPoints, index + 1, count - 1);
+            return new Point((1 - t) * P0.X + t * P1.X, (1 - t) * P0.Y + t * P1.Y);
         }
 
         private void Poly_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -1040,7 +1172,7 @@ namespace CycloneStudio
                 MessageBoxResult result = ShowQuestionDialog("Do you want to delete this connection?", "Delete connection");
                 if (result == MessageBoxResult.Yes)
                 {
-                    Polyline poly = (Polyline)sender;
+                    System.Windows.Shapes.Path poly = (System.Windows.Shapes.Path)sender;
                     Label label = (Label)poly.Tag;
                     PolylineTagData data = (PolylineTagData)label.Tag;
                     Pin inPin = (Pin)data.RecPinIn.Tag;
@@ -1083,7 +1215,7 @@ namespace CycloneStudio
 
         private void Event_OpenProject(object sender, RoutedEventArgs e)
         {
-            EntryWindow entryWindow = new EntryWindow(true);
+            ChooseWindow entryWindow = new ChooseWindow(true);
             entryWindow.Owner = this;
             if (entryWindow.ShowDialog() == true)
             {
@@ -1103,7 +1235,8 @@ namespace CycloneStudio
         private void LoadSaveAndSetEnviroment(string path, string name)
         {            
             actualProjectName = name;
-            this.Title = "Cyclone Studio - " + name;
+            string txt = isProject ? "– PROJECT:" : "– BLOCK:";
+            this.Title = "Cyclone Studio " + txt + " " + name;
 
             SaveDataContainer container = fileControler.OpenSaveFile(path, name);
 
@@ -1179,7 +1312,7 @@ namespace CycloneStudio
 
         private void Event_OpenBlock(object sender, RoutedEventArgs e)
         {
-            EntryWindow entryWindow = new EntryWindow(false);
+            ChooseWindow entryWindow = new ChooseWindow(false);
             entryWindow.Owner = this;
             if (entryWindow.ShowDialog() == true)
             {
@@ -1252,7 +1385,8 @@ namespace CycloneStudio
             wireId = 0;
             actualProjectName = "";
             choosenBoardName = "";
-            this.Title = "Cyclone Studio";
+            string txt = proj ? "– PROJECT" : "– BLOCK";
+            this.Title = "Cyclone Studio "+txt;
 
             int count = mmMenu.Items.Count;
             for (int i = 3; i < count; i++)
@@ -1310,6 +1444,7 @@ namespace CycloneStudio
 
         private void CreateModuleFromSave(Module moduleSaved,out Module module, out Grid hlavni, int height)
         {
+            
            module = new Module
             {
                 Id = moduleSaved.Id,
@@ -1335,18 +1470,17 @@ namespace CycloneStudio
                 Effect = GetShadowEffect()
 
             };
-            Image myImage = new Image
-            {
-                Height = 19,
-                Margin = new Thickness(0, 0, 0, 0)
-            };
-            BitmapImage myBitmapImage = new BitmapImage();
-            myBitmapImage.BeginInit();
-            myBitmapImage.UriSource = new Uri(@"C:\Users\Spektrom\Desktop\CycloneStudio\displej.png");
-            myBitmapImage.DecodePixelHeight = 20;
-            myBitmapImage.EndInit();
 
-            myImage.Source = myBitmapImage;
+            if (moduleSaved.BoardInfo != null)
+            {
+                BoardInfo binfo = new BoardInfo
+                {
+                    MarginLeft = moduleSaved.BoardInfo.MarginLeft,
+                    MarginTop = moduleSaved.BoardInfo.MarginTop,
+                    BoardName = moduleSaved.BoardInfo.BoardName
+                };
+                module.BoardInfo = binfo;
+            }
 
             hlavni = new Grid
             {
@@ -1362,9 +1496,15 @@ namespace CycloneStudio
 
             Panel.SetZIndex(hlavni, 1);
             
-            hlavni.Children.Add(g);
-            hlavni.Children.Add(myImage);
+            hlavni.Children.Add(g);            
             modules.Add(g);
+
+            if (module.BoardInfo != null)
+            {
+                Image myImage = CreateQuestionMarkImage(height);
+                hlavni.Children.Add(myImage);
+                hlavni.MouseRightButtonUp += Module_MouseRightButtonUp;
+            }
 
             hlavni.MouseEnter += EventMouseOverGrid;
             hlavni.MouseLeave += EventMouseLeaveGrid;
@@ -1390,6 +1530,10 @@ namespace CycloneStudio
                 else
                 {
                     createdPin = CreatePin(leftMarginPin, topMargin + topMargin * count, pinType, pinName.Name, module.Id, module.MarginLeft, module.MarginTop);
+                    
+                    createdPin.IsBus = pinName.IsBus;
+                    createdPin.BusType = pinName.BusType;
+                    
                     HorizontalAlignment alignment = HorizontalAlignment.Left;
                     if (pinType == Types.OUT)
                     {
@@ -1471,7 +1615,8 @@ namespace CycloneStudio
                     }
                 }
                 actualProjectName = fileName;
-                this.Title = "Cyclone Studio - " + fileName;
+                string txt = isProject ? "– PROJECT:" : "– BLOCK:";
+                this.Title = "Cyclone Studio "+txt+ " " + fileName;
                 SaveDataContainer container = new SaveDataContainer();
                 container.ModuleId = moduleId;
                 container.WireId = wireId;
@@ -1636,7 +1781,7 @@ namespace CycloneStudio
                 BlurRadius = 5,
                 Opacity = 0.3
             };
-        }
+        }        
 
         private static LinearGradientBrush GetLinearGradientFill()
         {

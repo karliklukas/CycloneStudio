@@ -23,6 +23,8 @@ namespace CycloneStudio.structs
         private bool hidden;
         private List<PolylineTagData> activeConnections;
         private string moduleId;
+        private bool isBus;
+        private string busType;
         [NonSerialized]
         private Rectangle rectangle;
 
@@ -34,11 +36,14 @@ namespace CycloneStudio.structs
         public List<PolylineTagData> ActiveConnections { get => activeConnections; set => activeConnections = value; }
         public string ModuleId { get => moduleId; set => moduleId = value; }
         public Rectangle Rectangle { get => rectangle; set => rectangle = value; }
+        public bool IsBus { get => isBus; set => isBus = value; }
+        public string BusType { get => busType; set => busType = value; }
 
         public Pin()
         {
             activeConnections = new List<PolylineTagData>();
             name_wire = "";
+            isBus = false;
         }
 
         public bool CompareConnections(Rectangle endPin)
