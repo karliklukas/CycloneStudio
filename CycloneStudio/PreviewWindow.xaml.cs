@@ -25,20 +25,13 @@ namespace CycloneStudio
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
                        
             imageView.Source = new BitmapImage(new Uri(@"graphics/"+name+".jpg", UriKind.RelativeOrAbsolute));
-            Console.WriteLine(imageView.Source.Width+" "+ imageView.Source.Height);
-            //this.Width = imageView.Source.Width+51;
-            //this.Height = imageView.Source.Height+51;
+            Console.WriteLine(imageView.Source.Width+" "+ imageView.Source.Height);            
             someGrid.Height = imageView.Source.Height;
             someGrid.Width = imageView.Source.Width;
 
-            if (name == "stormIV")
-            {
-                arrowPointer.Margin = new Thickness(marginLeft - 21, marginTop - 25, 0, 0);
-            }
-            else if (name == "DE0nano")
-            {
-                arrowPointer.Margin = new Thickness(marginLeft - 21, marginTop - 25, 0, 0);
-            }           
+            
+            arrowPointer.Margin = new Thickness(marginLeft - 21, marginTop - 25, 0, 0);
+                    
 
         }
     }

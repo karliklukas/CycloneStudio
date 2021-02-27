@@ -502,6 +502,11 @@ namespace CycloneStudio
 
             if (string.Equals(wireName, "e"))
                 wireName = "w" + ++wireId;
+
+            if (pinFrom.IsBus)
+            {
+                wireName = wireName + " " + pinFrom.BusType;
+            }
             return wireName;
         }
 
@@ -535,6 +540,11 @@ namespace CycloneStudio
         {
             if (handToggle.IsChecked == false) return;
             Rectangle el = (Rectangle)sender;
+            Pin p = el.Tag as Pin;
+            if (p.Connected && p.Type == Types.IN)
+            {
+                return;
+            }
             pinPreviousStroke = el.StrokeThickness;
             el.StrokeThickness = 4;
             if (this.Cursor != Cursors.Hand)
@@ -1069,53 +1079,47 @@ namespace CycloneStudio
                 Point3,
                 Point4,
                 Point5
-            };
-            SolidColorBrush c = new SolidColorBrush
-            {
-                Opacity = 0.8,
-                Color = Color.FromRgb(255, 255, 255)
-            };
+            };            
             Label text = new Label
             {
                 Content = name,
                 Tag = data                
             };
-            polyline.Tag = text;
+            polyline.Tag = text;            
 
-            int topMarginCorrection=0;
-            if (startY > endY && Math.Abs(startY - endY) > 100)
-            {
-                topMarginCorrection = 0;
-            }
-
-            Canvas.SetLeft(text, startX + 8);
-            Canvas.SetTop(text, startY - (25 - topMarginCorrection));
+            Canvas.SetLeft(text, startX + 6);
+            Canvas.SetTop(text, startY - 25);
 
             polyline.Points = polygonPoints;
 
             //canvas.Children.Add(polyline);
-            canvas.Children.Add(text);
+            
             ///////////////////////////////////////////
             //Console.WriteLine(distance);
             double dis2 = 0;
-            if (distance < 90)
+            double dis3 = 0;
+            if (distance < 100)
             {
                 dis2 = distance/3;
             }
-            if (distance < 70)
+            if (distance < 75)
             {
                 dis2 = distance / 2;
+                dis3 = 5;
             }
-            if (distance < 55)
+            if (distance < 66)
             {
                 dis2 = 60;
+                dis3 = 10;
             }
 
             Point[] points = new[] {
-            new Point(startX, startY),
+            new Point(startX+10, startY),
+            new Point(startX+(25-dis3), startY),
             new Point(startX+(70-dis2), startY),
             new Point(endX-(70-dis2), endY),
-            new Point(endX, endY)
+            new Point(endX-(25-dis3), endY),
+            new Point(endX-10, endY)
             };
 
             PolyLineSegment b = GetBezierApproximation(points, 256);
@@ -1141,6 +1145,7 @@ namespace CycloneStudio
             p.MouseLeave += EventMouseLeaveLine;
 
             canvas.Children.Add(p);
+            canvas.Children.Add(text);
             //return polyline;
             return p;
         }
