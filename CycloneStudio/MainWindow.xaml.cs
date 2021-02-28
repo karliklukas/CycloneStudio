@@ -1713,7 +1713,7 @@ namespace CycloneStudio
             {
                 fileControler.BuildVerilogForBlock(modules, actualProjectName);
             }
-
+            MessageBox.Show("Success");
 
         }
 

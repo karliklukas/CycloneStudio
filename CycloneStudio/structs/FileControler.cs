@@ -133,7 +133,7 @@ namespace CycloneStudio.structs
         {
             MenuData data = new MenuData();
             string text = File.ReadAllText(path);
-            string[] textSplited = Regex.Split(text, "module ([\\w\\d]+)\\(\\s*([\\w\\d,_\\]\\[:\\n\\s(]*)\\);");
+            string[] textSplited = Regex.Split(text, "module ([\\w\\d]+[ ]?)\\(\\s*([\\w\\d,_\\]\\[:\\n\\s(]*)\\);");
             data.Name = textSplited[1].Remove(0, 1);
             string dirPath = "..\\..\\components";
             if (isBlock)
@@ -179,7 +179,7 @@ namespace CycloneStudio.structs
                     }
                 }
 
-                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d,\\s]+)(assign|wire|\\/\\/position:\\s((\\d{1,3}),(\\d{1,3}),(\\w*)))");//TODO board image
+                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d, ]+)\\n(\\/\\/position:\\s((\\d{1,3}),(\\d{1,3}),(\\w*)))?");
                 if (textSplitedTwo.Length > 1)
                 {
                     string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
@@ -330,6 +330,7 @@ namespace CycloneStudio.structs
         private string CreateVerilogCode(List<Rectangle> modules, string name)
         {
             HashSet<string> wires = new HashSet<string>();
+            HashSet<string> wiresBus = new HashSet<string>();
 
             StringBuilder middlePart = new StringBuilder();
             StringBuilder topPart = new StringBuilder();
@@ -347,13 +348,14 @@ namespace CycloneStudio.structs
                 middlePart.Append("c" + module.Name + " ");
                 middlePart.Append(module.Id + "(");
 
-                ProcessPinsToVerilog(module.InPins, wires, middlePart, topPart, hiddenPart, inPrefix, module);
-                ProcessPinsToVerilog(module.OutPins, wires, middlePart, topPart, hiddenPart, outPrefix, module);
+                ProcessPinsToVerilog(module.InPins, wires, wiresBus, middlePart, topPart, hiddenPart, inPrefix, module);
+                ProcessPinsToVerilog(module.OutPins, wires, wiresBus, middlePart, topPart, hiddenPart, outPrefix, module);
 
                 middlePart.Remove(middlePart.Length - 1, 1);
                 middlePart.AppendLine(");");
 
             }
+
             middlePart.AppendLine("\nendmodule");
             if (topPart[topPart.Length - 1] != '(')
             {
@@ -373,30 +375,59 @@ namespace CycloneStudio.structs
                 topPart.Append(wire + ",");
             }
             topPart.Remove(topPart.Length - 1, 1);
-            topPart.AppendLine(";\n");
+            topPart.AppendLine(";");
 
+            foreach (string wire in wiresBus)
+            {
+                topPart.AppendLine("wire " + wire + ";");
+            }
+            topPart.AppendLine("");
             topPart.AppendLine(middlePart.ToString());
 
             //Console.WriteLine(topPart.ToString());
             return topPart.ToString();
         }
 
-        private void ProcessPinsToVerilog(List<Pin> pins, HashSet<string> wires, StringBuilder middlePart, StringBuilder topPart, StringBuilder hiddenPart, string prefix, Module module)
+        private void ProcessPinsToVerilog(List<Pin> pins, HashSet<string> wires, HashSet<string> wiresBus, StringBuilder middlePart, StringBuilder topPart, StringBuilder hiddenPart, string prefix, Module module)
         {
             foreach (Pin pin in pins)
             {
+                string nameTop = pin.Name;
+                string nameMiddle = pin.Name;
+                string wireName = pin.Name_wire;
+                string wireBusType = "";
+                if (pin.IsBus)
+                {
+                    string[] textSplited = Regex.Split(pin.Name, "([\\d\\w]*)(\\[\\d{1}:\\d{1}\\])");
+                    nameTop = textSplited[2] + " " + textSplited[3];
+                    nameMiddle = textSplited[3];
+
+                    textSplited = Regex.Split(pin.Name_wire, "([\\d\\w]*) (\\[\\d{1}:\\d{1}\\])");
+                    if (textSplited.Length>1)
+                    {
+                        wireName = textSplited[1];
+                        wireBusType = textSplited[2];
+                    }                    
+                }
+
                 if (pin.Hidden)
                 {
-                    middlePart.Append("." + pin.Name + "(" + pin.Name + "),");
-                    topPart.Append(prefix + pin.Name + ",");
+                    middlePart.Append("." + nameMiddle + "(" + nameMiddle + "),");
+                    topPart.Append(prefix + nameTop + ",");
                     if (!module.CustomPin)
-                        hiddenPart.Append(pin.Name + ",");
+                        hiddenPart.Append(nameMiddle + ",");
                 }
                 else
                 {
-                    middlePart.Append("." + pin.Name + "(" + pin.Name_wire + "),");
-                    if (pin.Name_wire != "")
+                    middlePart.Append("." + nameMiddle + "(" + wireName + "),");
+                    if (pin.Name_wire != "" && !pin.IsBus)
+                    {
                         wires.Add(pin.Name_wire);
+                    }
+                    else if (pin.Name_wire != "" && pin.IsBus)
+                    {
+                        wiresBus.Add(wireBusType+" "+wireName);
+                    }
                 }
 
             }
