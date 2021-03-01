@@ -179,7 +179,7 @@ namespace CycloneStudio.structs
                     }
                 }
 
-                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d, ]+)\\n(\\/\\/position:\\s((\\d{1,3}),(\\d{1,3}),(\\w*)))?");
+                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d, ]+)[\\n|\\r\\n](\\/\\/position:\\s((\\d{1,3}),(\\d{1,3}),(\\w*)))?");
                 if (textSplitedTwo.Length > 1)
                 {
                     string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');

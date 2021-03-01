@@ -25,7 +25,7 @@ namespace CycloneStudio
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
                        
             imageView.Source = new BitmapImage(new Uri(@"graphics/"+name+".jpg", UriKind.RelativeOrAbsolute));
-            Console.WriteLine(imageView.Source.Width+" "+ imageView.Source.Height);            
+            //Console.WriteLine(imageView.Source.Width+" "+ imageView.Source.Height);            
             someGrid.Height = imageView.Source.Height;
             someGrid.Width = imageView.Source.Width;
 

@@ -1665,15 +1665,17 @@ namespace CycloneStudio
 
         private void Event_Build(object sender, RoutedEventArgs e)
         {
-            BuildVerilogCode();           
+            bool success = BuildVerilogCode();
+            if (success)
+                MessageBox.Show("Success");
         }
 
-        private void BuildVerilogCode()
+        private bool BuildVerilogCode()
         {
             if (actualProjectName == "")
             {
                 MessageBox.Show("Please save project first.");
-                return;
+                return false;
             }
 
             HashSet<string> usedModulesPath = new HashSet<string>();
@@ -1700,7 +1702,7 @@ namespace CycloneStudio
                             MessageBox.Show("Module " + module.Id + " (" + module.Name + ") has unconnected pin " + pin.Name + "\n" +
                                 "Fix it or you will be unable to use this module in project.");
                         }                        
-                        return;
+                        return false;
                     }
                 }
             }
@@ -1713,8 +1715,7 @@ namespace CycloneStudio
             {
                 fileControler.BuildVerilogForBlock(modules, actualProjectName);
             }
-            MessageBox.Show("Success");
-
+            return true;
         }
 
         private void Event_Upload(object sender, RoutedEventArgs e)
