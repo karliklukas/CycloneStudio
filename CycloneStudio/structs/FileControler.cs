@@ -19,6 +19,8 @@ namespace CycloneStudio.structs
     {
         private const string PROJECT_PATH = "..\\..\\workspace";
         private const string BLOCK_PATH = "..\\..\\components\\block";
+        private const string SCRIPT_PATH = "..\\..\\scripts";
+        private const string QUARTUS_PATH = "..\\..\\scripts\\path.txt";
         private readonly RoutedEventHandler eventHandler;
         private readonly RoutedEventHandler eventCustomHandler;
 
@@ -286,7 +288,7 @@ namespace CycloneStudio.structs
             items.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
 
-        public bool BuildVerilogForProject(List<Rectangle> modules, string name, HashSet<string> usedModules)
+        public bool BuildVerilogForProject(List<Rectangle> modules, string name, HashSet<string> usedModules, string choosenBoardName)
         {
             string nameSrc = name + "\\src";
             string fileName = "c" + name + ".v";
@@ -304,13 +306,104 @@ namespace CycloneStudio.structs
 
             foreach (string item in usedModules)
             {
-                int i = item.LastIndexOf("\\");
-                string itenName = item.Remove(0, i+1);
-                string copyTarget = System.IO.Path.Combine(dirPathString, itenName);
-                File.Copy(item, copyTarget);
+                CopyFile(dirPathString, item);
+            }
+
+            if (CopyBuildScriptFiles(dirPathString, choosenBoardName, fileName, usedModules))
+            {
+                /*string strCmdText;
+                strCmdText = System.IO.Path.Combine(dirPathString, "build.bat");
+                //strCmdText = "src/build.bat";
+                System.Diagnostics.Process.Start("CMD.exe", strCmdText);*/
+            }
+            else
+            {
+                return false;
             }
             
             return true;
+        }
+
+        private bool CopyBuildScriptFiles(string targetPath, string boardName, string mainModuleName, HashSet<string> usedModules)
+        {            
+            string sourcePath = "";
+            string scriptName = "";
+
+            if (boardName == "DE0-Nano")
+            {
+                sourcePath = System.IO.Path.Combine(SCRIPT_PATH, "DE0-Nano_TEMP");
+                scriptName = "DE0Nano";
+            }
+            else if (boardName == "StormIV-E6")
+            {
+                sourcePath = System.IO.Path.Combine(SCRIPT_PATH, "StormIV-E6_TEMP");
+                scriptName = "StormIV";
+            } else
+            {
+                return false;
+            }
+           
+            if (Directory.Exists(sourcePath))
+            {
+                string[] files = Directory.GetFiles(sourcePath);
+               
+                foreach (string filePath in files)
+                {                    
+                    CopyFile(targetPath, filePath);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Source path does not exist!");
+                return false;
+            }
+
+            return ChangeScriptsSetting(targetPath, scriptName, mainModuleName, usedModules);
+
+            //return true;
+        }
+
+        private bool ChangeScriptsSetting(string targetPath, string scriptName, string mainModuleName, HashSet<string> usedModules)
+        {
+            string path = System.IO.Path.Combine(targetPath, scriptName + ".qsf");
+
+            string text = File.ReadAllText(path);
+
+            string pureName = mainModuleName.Remove(mainModuleName.Length - 2);
+
+            text = text.Replace("TOP_LEVEL_ENTITY top", "TOP_LEVEL_ENTITY " + pureName);
+            text = text.Replace("VERILOG_FILE top.v", "VERILOG_FILE " + mainModuleName);
+
+            foreach (string modulePath in usedModules)
+            {
+                string module = System.IO.Path.GetFileName(modulePath);
+                string addModul = "\nset_global_assignment -name VERILOG_FILE " + module;
+                text += addModul;
+            }
+            File.WriteAllText(path, text);           
+
+            path = System.IO.Path.Combine(targetPath, "build.bat");            
+            ReplaceQuartusPath(path);
+
+            path = System.IO.Path.Combine(targetPath, "upload.bat");
+            ReplaceQuartusPath(path);            
+
+            return true;
+        }
+
+        private static void ReplaceQuartusPath(string path)
+        {
+            string quartusPath = File.ReadAllText(QUARTUS_PATH);
+            string text = File.ReadAllText(path);
+            text = text.Replace("QUARTUSpath=e:\\intelFPGA_lite\\18.1\\quartus\\bin64", "QUARTUSpath=" + quartusPath);
+            File.WriteAllText(path, text);
+        }
+
+        private void CopyFile(string targetDirPath, string sourcePath)
+        {           
+            string itenName = System.IO.Path.GetFileName(sourcePath);
+            string copyTarget = System.IO.Path.Combine(targetDirPath, itenName);
+            File.Copy(sourcePath, copyTarget, true);
         }
 
         public bool BuildVerilogForBlock(List<Rectangle> modules, string name)
@@ -551,6 +644,26 @@ namespace CycloneStudio.structs
             data = ReadAndProcessFile(targetPath, true);
 
             return true;
+        }
+
+        public bool CheckQuartusPathFile()
+        {            
+            return File.Exists(QUARTUS_PATH);
+        }
+
+        public void CreateQuartusPathFile(string path)
+        {            
+            File.WriteAllText(QUARTUS_PATH, System.IO.Path.GetDirectoryName(path));
+        }
+
+        public void StartUpload(string name)
+        {
+            string nameSrc = name + "\\src";           
+            string dirPathString = System.IO.Path.Combine(PROJECT_PATH, nameSrc);
+
+            string strCmdText;
+            strCmdText = System.IO.Path.Combine(dirPathString, "upload.bat");
+           // System.Diagnostics.Process.Start("CMD.exe", strCmdText);
         }
     }
 }

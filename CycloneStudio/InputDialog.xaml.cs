@@ -19,6 +19,12 @@ namespace CycloneStudio
     /// </summary>
     public partial class InputDialog : Window
     {
+        public string ResponseText
+        {
+            get { return textBoxName.Text; }
+            set { textBoxName.Text = value; }
+        }
+
         public InputDialog()
         {
             InitializeComponent();
@@ -33,13 +39,7 @@ namespace CycloneStudio
             textBoxName.Focus();
             this.Title = newTitle;
             textLabel.Content = newText;
-        }
-
-        public string ResponseText
-        {
-            get { return textBoxName.Text; }
-            set { textBoxName.Text = value; }
-        }
+        }        
 
         private void OKButton_Click(object sender, RoutedEventArgs e)
         {           

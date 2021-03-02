@@ -1,0 +1,18 @@
+﻿<Window x:Class="CycloneStudio.FileChooserWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CycloneStudio"
+        mc:Ignorable="d"
+        Title="Choose file" Height="208.028" Width="438.235" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" WindowStyle="ToolWindow">
+    <Grid>
+        <TextBox x:Name="pathBox" HorizontalAlignment="Left" Height="23" Margin="50,67,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="362" TextChanged="TextChangedEventHandler"/>
+        <Label Content="Path:" HorizontalAlignment="Left" Margin="14,64,0,0" VerticalAlignment="Top"/>
+        <Button Content="Browse" HorizontalAlignment="Left" Margin="337,95,0,0" VerticalAlignment="Top" Width="74" Click="Browse_Click"/>
+        <Label Content="Hello! Welcome to Cyclone Studio.&#xA;Please select your Intel Quartus.exe file." HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="31,10,0,0" VerticalAlignment="Top" Width="258" Height="47" FontWeight="Bold"/>
+        <Button Content="Cancel" HorizontalAlignment="Left" Margin="337,141,0,0" VerticalAlignment="Top" Width="75" IsCancel="True"/>
+        <Button x:Name="okBtn" Content="OK" HorizontalAlignment="Left" Margin="250,141,0,0" VerticalAlignment="Top" Width="75" IsDefault="True" Click="Ok_Click" IsEnabled="False"/>
+
+    </Grid>
+</Window>

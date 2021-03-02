@@ -34,10 +34,28 @@ namespace CycloneStudio
             isProject = true;
             isBlock = false;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            fileControler = new FileControler();                       
+            fileControler = new FileControler();            
+            radioProject.IsChecked = true;
+            ContentRendered += Window_ContentRendered;
+        }
+
+        private void Window_ContentRendered(object sender, EventArgs e)
+        {
+            if (!fileControler.CheckQuartusPathFile())
+            {
+                FileChooserWindow fileChooser = new FileChooserWindow();
+                fileChooser.Owner = this;
+                if (fileChooser.ShowDialog() == true)
+                {
+                    fileControler.CreateQuartusPathFile(fileChooser.ResponseText);
+                }
+                else
+                {
+                    DialogResult = false;
+                }
+            }
 
             
-            radioProject.IsChecked = true;
         }
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)

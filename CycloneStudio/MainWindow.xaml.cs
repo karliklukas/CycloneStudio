@@ -1666,8 +1666,12 @@ namespace CycloneStudio
         private void Event_Build(object sender, RoutedEventArgs e)
         {
             bool success = BuildVerilogCode();
-            if (success)
+            if (success) { 
                 MessageBox.Show("Success");
+            }
+            else { 
+                MessageBox.Show("Error");
+            }
         }
 
         private bool BuildVerilogCode()
@@ -1709,7 +1713,7 @@ namespace CycloneStudio
 
             if (isProject)
             {
-                fileControler.BuildVerilogForProject(modules, actualProjectName, usedModulesPath);
+                return fileControler.BuildVerilogForProject(modules, actualProjectName, usedModulesPath, choosenBoardName);
             }
             else if (isBlock)
             {
@@ -1720,6 +1724,12 @@ namespace CycloneStudio
 
         private void Event_Upload(object sender, RoutedEventArgs e)
         {
+            if (actualProjectName == "")
+            {
+                MessageBox.Show("Please save project first.");
+                return;
+            }
+            fileControler.StartUpload(actualProjectName);
 
         }
 
