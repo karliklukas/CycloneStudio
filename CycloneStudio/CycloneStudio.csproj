@@ -49,6 +49,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>graphics\icon.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -71,6 +74,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BoardWindow.xaml.cs">
+      <DependentUpon>BoardWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ChooseWindow.xaml.cs">
       <DependentUpon>ChooseWindow.xaml</DependentUpon>
     </Compile>
@@ -94,6 +100,10 @@
     <Compile Include="structs\PolylineTagData.cs" />
     <Compile Include="structs\FileControler.cs" />
     <Compile Include="structs\SaveDataContainer.cs" />
+    <Page Include="BoardWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ChooseWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

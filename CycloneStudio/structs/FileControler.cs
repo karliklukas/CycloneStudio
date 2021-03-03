@@ -14,7 +14,7 @@ using System.Runtime.Serialization;
 using System.Xml;
 
 namespace CycloneStudio.structs
-{    
+{
     class FileControler
     {
         private const string PROJECT_PATH = "..\\..\\workspace";
@@ -30,7 +30,7 @@ namespace CycloneStudio.structs
         {
             this.eventHandler = eventHandler;
             this.eventCustomHandler = eventCustomHandler;
-        }        
+        }
 
         public void GenerateMenuItems(Menu menu)
         {
@@ -55,7 +55,7 @@ namespace CycloneStudio.structs
                     {
                         MenuItem subItem = new MenuItem();
                         subItem.Header = innerDirectory.Name;
-                        
+
 
                         if (directory.Name == "block")
                         {
@@ -94,7 +94,6 @@ namespace CycloneStudio.structs
               .OrderBy(x => TrimModuleName(x).LastIndexOfAny(nums))
               .ThenBy(x => x.Name);
 
-            
             foreach (FileInfo file in sortedFiles)
             {
                 MenuItem newSubMenuItem = new MenuItem();
@@ -108,10 +107,8 @@ namespace CycloneStudio.structs
                     newSubMenuItem.Click += eventCustomHandler;
                     continue;
                 }
-                
-                newSubMenuItem.Click += eventHandler;
 
-                
+                newSubMenuItem.Click += eventHandler;
             }
         }
 
@@ -141,23 +138,10 @@ namespace CycloneStudio.structs
             if (isBlock)
             {
                 data.FilePath = path.Replace('/', System.IO.Path.DirectorySeparatorChar);
-            } else
+            }
+            else
             {
-                DirectoryInfo directory = new DirectoryInfo(@dirPath);
-                string fullDirectory = directory.FullName;
-                string fullFile = path;
-
-                if (!fullFile.StartsWith(fullDirectory))
-                {
-                    Console.WriteLine("Unable to make relative path");
-                }
-                else
-                {
-                    string p = fullFile.Substring(fullDirectory.Length + 1);
-                    p = System.IO.Path.Combine(dirPath, p);
-                    p = p.Replace('/', System.IO.Path.DirectorySeparatorChar);
-                    data.FilePath = p;
-                }
+                MakeRelativePath(path, data, dirPath);
             }
 
             if (data.FilePath.Contains("\\block\\"))
@@ -188,7 +172,8 @@ namespace CycloneStudio.structs
                     data.HiddenPins = new List<string>(result);
                     if (textSplitedTwo[2].Contains("position"))
                     {
-                        data.BoardInfo = new BoardInfo {
+                        data.BoardInfo = new BoardInfo
+                        {
                             MarginLeft = Int32.Parse(textSplitedTwo[4]),
                             MarginTop = Int32.Parse(textSplitedTwo[5]),
                             BoardName = textSplitedTwo[6]
@@ -196,8 +181,27 @@ namespace CycloneStudio.structs
                     }
                 }
             }
-            
+
             return data;
+        }
+
+        private static void MakeRelativePath(string path, MenuData data, string dirPath)
+        {
+            DirectoryInfo directory = new DirectoryInfo(@dirPath);
+            string fullDirectory = directory.FullName;
+            string fullFile = path;
+
+            if (!fullFile.StartsWith(fullDirectory))
+            {
+                Console.WriteLine("Unable to make relative path");
+            }
+            else
+            {
+                string p = fullFile.Substring(fullDirectory.Length + 1);
+                p = System.IO.Path.Combine(dirPath, p);
+                p = p.Replace('/', System.IO.Path.DirectorySeparatorChar);
+                data.FilePath = p;
+            }
         }
 
         private void GenerateSubItems(DirectoryInfo sub, MenuItem newMenuItem)
@@ -283,7 +287,7 @@ namespace CycloneStudio.structs
                     };
                     items.Add(project);
                 }
-                               
+
             }
             items.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
@@ -320,12 +324,12 @@ namespace CycloneStudio.structs
             {
                 return false;
             }
-            
+
             return true;
         }
 
         private bool CopyBuildScriptFiles(string targetPath, string boardName, string mainModuleName, HashSet<string> usedModules)
-        {            
+        {
             string sourcePath = "";
             string scriptName = "";
 
@@ -338,17 +342,18 @@ namespace CycloneStudio.structs
             {
                 sourcePath = System.IO.Path.Combine(SCRIPT_PATH, "StormIV-E6_TEMP");
                 scriptName = "StormIV";
-            } else
+            }
+            else
             {
                 return false;
             }
-           
+
             if (Directory.Exists(sourcePath))
             {
                 string[] files = Directory.GetFiles(sourcePath);
-               
+
                 foreach (string filePath in files)
-                {                    
+                {
                     CopyFile(targetPath, filePath);
                 }
             }
@@ -380,13 +385,13 @@ namespace CycloneStudio.structs
                 string addModul = "\nset_global_assignment -name VERILOG_FILE " + module;
                 text += addModul;
             }
-            File.WriteAllText(path, text);           
+            File.WriteAllText(path, text);
 
-            path = System.IO.Path.Combine(targetPath, "build.bat");            
+            path = System.IO.Path.Combine(targetPath, "build.bat");
             ReplaceQuartusPath(path);
 
             path = System.IO.Path.Combine(targetPath, "upload.bat");
-            ReplaceQuartusPath(path);            
+            ReplaceQuartusPath(path);
 
             return true;
         }
@@ -400,22 +405,22 @@ namespace CycloneStudio.structs
         }
 
         private void CopyFile(string targetDirPath, string sourcePath)
-        {           
+        {
             string itenName = System.IO.Path.GetFileName(sourcePath);
             string copyTarget = System.IO.Path.Combine(targetDirPath, itenName);
             File.Copy(sourcePath, copyTarget, true);
         }
 
         public bool BuildVerilogForBlock(List<Rectangle> modules, string name)
-        {            
+        {
             string fileName = "c" + name + ".v";
             string dirPathString = System.IO.Path.Combine(BLOCK_PATH, name);
             string filePathString = System.IO.Path.Combine(dirPathString, fileName);
-            
+
             Directory.CreateDirectory(dirPathString);
             string text = CreateVerilogCode(modules, name);
 
-            File.WriteAllText(filePathString, text);            
+            File.WriteAllText(filePathString, text);
 
             return true;
         }
@@ -454,7 +459,7 @@ namespace CycloneStudio.structs
             {
                 topPart.Remove(topPart.Length - 1, 1);
             }
-            
+
             topPart.AppendLine(");");
 
             hiddenPart.Remove(hiddenPart.Length - 1, 1);
@@ -496,11 +501,11 @@ namespace CycloneStudio.structs
                     nameMiddle = textSplited[3];
 
                     textSplited = Regex.Split(pin.Name_wire, "([\\d\\w]*) (\\[\\d{1}:\\d{1}\\])");
-                    if (textSplited.Length>1)
+                    if (textSplited.Length > 1)
                     {
                         wireName = textSplited[1];
                         wireBusType = textSplited[2];
-                    }                    
+                    }
                 }
 
                 if (pin.Hidden)
@@ -519,7 +524,7 @@ namespace CycloneStudio.structs
                     }
                     else if (pin.Name_wire != "" && pin.IsBus)
                     {
-                        wiresBus.Add(wireBusType+" "+wireName);
+                        wiresBus.Add(wireBusType + " " + wireName);
                     }
                 }
 
@@ -528,7 +533,7 @@ namespace CycloneStudio.structs
 
         public bool CheckProjectName(string name)
         {
-            return Directory.Exists(System.IO.Path.Combine(PROJECT_PATH, name));           
+            return Directory.Exists(System.IO.Path.Combine(PROJECT_PATH, name));
         }
 
         public bool CheckName(string name, bool isProject)
@@ -536,10 +541,11 @@ namespace CycloneStudio.structs
             if (isProject)
             {
                 return Directory.Exists(System.IO.Path.Combine(PROJECT_PATH, name));
-            } else
+            }
+            else
             {
                 return Directory.Exists(System.IO.Path.Combine(BLOCK_PATH, name));
-            }            
+            }
         }
 
         public void DeleteProjectFolder(string name)
@@ -557,7 +563,7 @@ namespace CycloneStudio.structs
             {
                 Directory.Delete(System.IO.Path.Combine(BLOCK_PATH, name), true);
             }
-            
+
         }
 
         public void DeleteBlockTmpFolder()
@@ -565,7 +571,7 @@ namespace CycloneStudio.structs
             if (Directory.Exists("..\\..\\components\\block\\tmp"))
             {
                 Directory.Delete("..\\..\\components\\block\\tmp", true);
-            }            
+            }
         }
 
         public bool SaveProjectOrBlock(string name, SaveDataContainer container, bool isProject, List<Module> customPins)
@@ -647,23 +653,29 @@ namespace CycloneStudio.structs
         }
 
         public bool CheckQuartusPathFile()
-        {            
+        {
             return File.Exists(QUARTUS_PATH);
         }
 
         public void CreateQuartusPathFile(string path)
-        {            
+        {
             File.WriteAllText(QUARTUS_PATH, System.IO.Path.GetDirectoryName(path));
         }
 
-        public void StartUpload(string name)
+        public bool StartUpload(string name)
         {
-            string nameSrc = name + "\\src";           
+            string nameSrc = name + "\\src";
             string dirPathString = System.IO.Path.Combine(PROJECT_PATH, nameSrc);
+            string strCmdText = System.IO.Path.Combine(dirPathString, "upload.bat");
 
-            string strCmdText;
-            strCmdText = System.IO.Path.Combine(dirPathString, "upload.bat");
-           // System.Diagnostics.Process.Start("CMD.exe", strCmdText);
+            if (File.Exists(strCmdText))
+            {
+                //System.Diagnostics.Process.Start("CMD.exe", strCmdText);
+                return true;
+            }
+
+            return false;
+
         }
     }
 }
