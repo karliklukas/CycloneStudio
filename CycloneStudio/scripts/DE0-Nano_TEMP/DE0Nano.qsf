@@ -133,16 +133,4 @@ set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_
 # Hlavni pouzity modul
 set_global_assignment -name VERILOG_FILE top.v
 
-# Seznam pouzitych modulu (
-set_global_assignment -name VERILOG_FILE cSWITCH.v
-set_global_assignment -name VERILOG_FILE cKEY0.v
-set_global_assignment -name VERILOG_FILE cKEY1.v
-set_global_assignment -name VERILOG_FILE cCLK_50MHz.v
-set_global_assignment -name VERILOG_FILE cLED0.v
-set_global_assignment -name VERILOG_FILE cLED1.v
-set_global_assignment -name VERILOG_FILE cLED2.v
-set_global_assignment -name VERILOG_FILE cLED3.v
-set_global_assignment -name VERILOG_FILE cLED4.v
-set_global_assignment -name VERILOG_FILE cLED5.v
-set_global_assignment -name VERILOG_FILE cLED6.v
-set_global_assignment -name VERILOG_FILE cLED7.v
+# Seznam pouzitych modulu

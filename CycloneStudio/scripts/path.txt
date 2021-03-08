@@ -1,1 +1,1 @@
-e:\intelFPGA_lite\18.1\quartus\bin64
+C:\Program Files (x86)\Bloody5\Bloody5

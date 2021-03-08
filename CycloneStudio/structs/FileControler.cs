@@ -12,17 +12,21 @@ using System.Windows.Media;
 using System.ComponentModel;
 using System.Runtime.Serialization;
 using System.Xml;
+using System.Diagnostics;
+using System.Threading;
 
 namespace CycloneStudio.structs
 {
     class FileControler
     {
+        private LoadingWindow loadingWindow;
         private const string PROJECT_PATH = "..\\..\\workspace";
         private const string BLOCK_PATH = "..\\..\\components\\block";
         private const string SCRIPT_PATH = "..\\..\\scripts";
         private const string QUARTUS_PATH = "..\\..\\scripts\\path.txt";
         private readonly RoutedEventHandler eventHandler;
         private readonly RoutedEventHandler eventCustomHandler;
+        private string loadingText;
 
         public FileControler() { }
 
@@ -315,18 +319,74 @@ namespace CycloneStudio.structs
 
             if (CopyBuildScriptFiles(dirPathString, choosenBoardName, fileName, usedModules))
             {
-                /*string strCmdText;
+                string strCmdText;
                 strCmdText = System.IO.Path.Combine(dirPathString, "build.bat");
+                loadingText = "Building...";
                 //strCmdText = "src/build.bat";
-                System.Diagnostics.Process.Start("CMD.exe", strCmdText);*/
+                //System.Diagnostics.Process.Start("CMD.exe", strCmdText);
+                //err=0 vse je OK, tato cast trva min 30 sec
+                CreateNewThread();
+
+                int err = cmdCommand(dirPathString, "build.bat");
+                CloseWindowSafe();
+                if (err == 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
             }
             else
             {
                 return false;
-            }
-
-            return true;
+            }            
         }
+
+        private void CreateNewThread()
+        {
+            Thread newWindowThread = new Thread(new ThreadStart(ThreadStartingPoint));
+            newWindowThread.SetApartmentState(ApartmentState.STA);
+            newWindowThread.IsBackground = true;
+            newWindowThread.Start();
+        }
+
+        private void ThreadStartingPoint()
+        {
+            loadingWindow = new LoadingWindow(loadingText);
+            loadingWindow.Show();
+            System.Windows.Threading.Dispatcher.Run();
+        }
+
+        void CloseWindowSafe()
+        {
+            if (loadingWindow.Dispatcher.CheckAccess())
+                loadingWindow.Close();
+            else
+                loadingWindow.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new ThreadStart(loadingWindow.Close));
+        }
+
+        private int cmdCommand(string path, string command)
+        {
+            int exitCode;
+            ProcessStartInfo processInfo;
+            Process process;
+
+            processInfo = new ProcessStartInfo("cmd.exe", "/c " + command);
+            processInfo.CreateNoWindow = true;
+            processInfo.UseShellExecute = false;
+            processInfo.WorkingDirectory = path;
+
+            process = Process.Start(processInfo);
+            process.WaitForExit();
+
+            exitCode = process.ExitCode;
+            process.Close();
+            return exitCode;
+        }
+
 
         private bool CopyBuildScriptFiles(string targetPath, string boardName, string mainModuleName, HashSet<string> usedModules)
         {
@@ -388,10 +448,10 @@ namespace CycloneStudio.structs
             File.WriteAllText(path, text);
 
             path = System.IO.Path.Combine(targetPath, "build.bat");
-            ReplaceQuartusPath(path);
+            //ReplaceQuartusPath(path);
 
             path = System.IO.Path.Combine(targetPath, "upload.bat");
-            ReplaceQuartusPath(path);
+            //ReplaceQuartusPath(path);
 
             return true;
         }
@@ -400,7 +460,7 @@ namespace CycloneStudio.structs
         {
             string quartusPath = File.ReadAllText(QUARTUS_PATH);
             string text = File.ReadAllText(path);
-            text = text.Replace("QUARTUSpath=e:\\intelFPGA_lite\\18.1\\quartus\\bin64", "QUARTUSpath=" + quartusPath);
+            text = text.Replace("QUARTUSpath=", "QUARTUSpath=" + quartusPath);
             File.WriteAllText(path, text);
         }
 
@@ -670,8 +730,22 @@ namespace CycloneStudio.structs
 
             if (File.Exists(strCmdText))
             {
-                //System.Diagnostics.Process.Start("CMD.exe", strCmdText);
+                System.Diagnostics.Process.Start("CMD.exe", strCmdText);
                 return true;
+                /*loadingText = "Uploading...";                
+                CreateNewThread();
+
+                int err = cmdCommand(dirPathString, "upload.bat");
+                CloseWindowSafe();
+                if (err == 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }*/
+
             }
 
             return false;

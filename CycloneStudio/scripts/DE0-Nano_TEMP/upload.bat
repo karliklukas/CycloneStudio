@@ -2,7 +2,7 @@
 
 set PROJECT=DE0Nano
 :: cesta k vyvojovemu prostredi QUARTUS
-set QUARTUSpath=e:\intelFPGA_lite\18.1\quartus\bin64
+set QUARTUSpath=
 
 ::quartus_pgm
 :: %PROJECT%

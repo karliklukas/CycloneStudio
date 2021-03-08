@@ -89,6 +89,9 @@
     <Compile Include="InputDialog.xaml.cs">
       <DependentUpon>InputDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="LoadingWindow.xaml.cs">
+      <DependentUpon>LoadingWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="PreviewWindow.xaml.cs">
       <DependentUpon>PreviewWindow.xaml</DependentUpon>
     </Compile>
@@ -117,6 +120,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="InputDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LoadingWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -157,17 +164,6 @@
     </EmbeddedResource>
     <None Include="components\bit\cONE.v" />
     <None Include="components\bit\cZERO.v" />
-    <None Include="components\block\BCD_decoder\cvstup_A.v" />
-    <None Include="components\block\BCD_decoder\cvstup_B.v" />
-    <None Include="components\block\BCD_decoder\cvstup_C.v" />
-    <None Include="components\block\BCD_decoder\cvstup_D.v" />
-    <None Include="components\block\BCD_decoder\cvystup_a.v" />
-    <None Include="components\block\BCD_decoder\cvystup_b.v" />
-    <None Include="components\block\BCD_decoder\cvystup_c.v" />
-    <None Include="components\block\BCD_decoder\cvystup_d.v" />
-    <None Include="components\block\BCD_decoder\cvystup_e.v" />
-    <None Include="components\block\BCD_decoder\cvystup_f.v" />
-    <None Include="components\block\BCD_decoder\cvystup_g.v" />
     <None Include="components\board\DE0-Nano\cCLK_50MHz.v" />
     <None Include="components\board\DE0-Nano\cIN_PIN11.v" />
     <None Include="components\board\DE0-Nano\cIN_PIN12.v" />
@@ -287,6 +283,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="components\block\" />
     <Folder Include="components\comb\" />
     <Folder Include="components\sec\" />
     <Folder Include="scripts\StormIV-E6_TEMP\" />
@@ -324,6 +321,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="graphics\more.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="graphics\bb.gif" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
