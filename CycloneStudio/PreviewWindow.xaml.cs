@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,14 +24,22 @@ namespace CycloneStudio
         {
             InitializeComponent();
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-                       
-            imageView.Source = new BitmapImage(new Uri(@"graphics/"+name+".jpg", UriKind.RelativeOrAbsolute));
-            //Console.WriteLine(imageView.Source.Width+" "+ imageView.Source.Height);            
-            someGrid.Height = imageView.Source.Height;
-            someGrid.Width = imageView.Source.Width;
+            try
+            {
+                imageView.Source = new BitmapImage(new Uri(@"graphics/" + name + ".jpg", UriKind.RelativeOrAbsolute));
+                           
+                someGrid.Height = imageView.Source.Height;
+                someGrid.Width = imageView.Source.Width;
+                arrowPointer.Margin = new Thickness(marginLeft - 21, marginTop - 25, 0, 0);
+            }
+            catch (IOException e)
+            {
+                Title = "BAD IMAGE";
+            }
+            
 
             
-            arrowPointer.Margin = new Thickness(marginLeft - 21, marginTop - 25, 0, 0);
+            
                     
 
         }

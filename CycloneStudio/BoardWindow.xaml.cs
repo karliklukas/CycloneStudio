@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CycloneStudio.structs;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,7 @@ namespace CycloneStudio
     public partial class BoardWindow : Window
     {
         private string choosenBoardName;
+        private FileControler fileControler;
         public string ChoosenBoardName
         {
             get { return choosenBoardName; }
@@ -29,8 +31,13 @@ namespace CycloneStudio
         public BoardWindow()
         {
             InitializeComponent();
-            choosenBoardName = "DE0-Nano";
+            fileControler = new FileControler();
         }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            boardSelect.ItemsSource = fileControler.GetAllBoards();
+        }        
 
         private void SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -39,9 +46,8 @@ namespace CycloneStudio
                 return;
             }
             if (boardSelect.SelectedItem != null)
-            {
-                ComboBoxItem typeItem = (ComboBoxItem)boardSelect.SelectedItem;
-                choosenBoardName = typeItem.Content.ToString();
+            {               
+                choosenBoardName = boardSelect.SelectedItem as string;
             }
         }
 

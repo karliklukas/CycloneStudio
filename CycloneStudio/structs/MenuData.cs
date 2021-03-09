@@ -14,7 +14,7 @@ namespace CycloneStudio.structs
         private List<string> outPins;
         private List<string> hiddenPins;
         private bool isBlock;
-        private BoardInfo boardInfo;
+        private List<BoardInfo> boardInfo;
 
         public MenuData()
         {
@@ -30,6 +30,6 @@ namespace CycloneStudio.structs
         public List<string> OutPins { get => outPins; set => outPins = value; }
         public List<string> HiddenPins { get => hiddenPins; set => hiddenPins = value; }
         public bool IsBlock { get => isBlock; set => isBlock = value; }
-        internal BoardInfo BoardInfo { get => boardInfo; set => boardInfo = value; }
+        internal List<BoardInfo> BoardInfo { get => boardInfo; set => boardInfo = value; }
     }
 }

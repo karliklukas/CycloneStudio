@@ -285,8 +285,49 @@ namespace CycloneStudio
 
             Grid el = (Grid)sender;
             Rectangle rec = (Rectangle)el.Tag;
-            Module module = (Module)rec.Tag;
-            PreviewWindow previewWindow = new PreviewWindow(module.BoardInfo.MarginLeft, module.BoardInfo.MarginTop, module.BoardInfo.BoardName);
+            Module module = (Module)rec.Tag;            
+           
+            if (boardChoosen)
+            {
+                choosenBoardNameTemp = choosenBoardName;
+            }
+            else
+            {
+                BoardWindow boardWindow = new BoardWindow();
+                boardWindow.Owner = this;
+                if (boardWindow.ShowDialog() == true)
+                {
+                    choosenBoardNameTemp = boardWindow.ChoosenBoardName;
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            if (choosenBoardNameTemp == "DE0-Nano")
+            {
+                choosenBoardNameTemp = "DE0nano";
+            }
+            else if (choosenBoardNameTemp == "StormIV-E6")
+            {
+                choosenBoardNameTemp = "StormIV";
+            }
+
+            BoardInfo boardInfo;
+            if (module.BoardInfo.Count == 1)
+            {
+                boardInfo = module.BoardInfo[0];
+            }
+            else
+            {                
+                boardInfo = module.BoardInfo.Find(info => info.BoardName == choosenBoardNameTemp);
+            }
+            if (boardInfo == null)
+            {
+                return;
+            }
+            PreviewWindow previewWindow = new PreviewWindow(boardInfo.MarginLeft, boardInfo.MarginTop, boardInfo.BoardName);
             previewWindow.ShowDialog();
 
         }
@@ -1481,13 +1522,19 @@ namespace CycloneStudio
 
             if (moduleSaved.BoardInfo != null)
             {
-                BoardInfo binfo = new BoardInfo
+                List<BoardInfo> boardInfos = new List<BoardInfo>();
+                foreach (var item in moduleSaved.BoardInfo)
                 {
-                    MarginLeft = moduleSaved.BoardInfo.MarginLeft,
-                    MarginTop = moduleSaved.BoardInfo.MarginTop,
-                    BoardName = moduleSaved.BoardInfo.BoardName
-                };
-                module.BoardInfo = binfo;
+                    BoardInfo binfo = new BoardInfo
+                    {
+                        MarginLeft = item.MarginLeft,
+                        MarginTop = item.MarginTop,
+                        BoardName = item.BoardName
+                    };
+                    boardInfos.Add(binfo);
+                }
+                
+                module.BoardInfo = boardInfos;
             }
 
             hlavni = new Grid
@@ -1573,9 +1620,6 @@ namespace CycloneStudio
             {
                 MessageBox.Show("Not a block.");
             }
-
-            //TODO aktualizovat blocks?
-
         }
 
         private void SaveProjectOrBlock(bool isProject)
@@ -1669,6 +1713,11 @@ namespace CycloneStudio
 
         private void Event_Build(object sender, RoutedEventArgs e)
         {
+            if (actualProjectName == "")
+            {
+                MessageBox.Show("Please save project first.");
+                return;
+            }
             if (!boardChoosen)
             {
                 BoardWindow boardWindow = new BoardWindow();
@@ -1696,12 +1745,7 @@ namespace CycloneStudio
         }
 
         private bool BuildVerilogCode()
-        {
-            if (actualProjectName == "")
-            {
-                MessageBox.Show("Please save project first.");
-                return false;
-            }
+        {            
 
             HashSet<string> usedModulesPath = new HashSet<string>();
             foreach (Rectangle rectangle in modules)
@@ -1785,6 +1829,15 @@ namespace CycloneStudio
             }
         }
 
+        private void Event_Close(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult result = ShowQuestionDialog("Close Cyclone Studio?", "Close aplication");
+            if (result == MessageBoxResult.Yes)
+            {
+                this.Close();
+            }
+        }
+
         private void HandToggleChecked(object sender, RoutedEventArgs e)
         {
             deleteToggle.IsChecked = false;
@@ -1851,7 +1904,7 @@ namespace CycloneStudio
             myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 186, 50), 0.2));
             myVerticalGradient.GradientStops.Add(new GradientStop(Color.FromRgb(0, 131, 35), 1.0));
             return myVerticalGradient;
-        }
+        }        
 
         private static LinearGradientBrush GetLinearGradientFillPinOut()
         {

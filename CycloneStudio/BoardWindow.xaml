@@ -5,11 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CycloneStudio"
         mc:Ignorable="d"
-        Title="Choose board" Height="168.5" Width="302.5" WindowStyle="ToolWindow" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+        Title="Choose board" Height="168.5" Width="302.5" WindowStyle="ToolWindow" 
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Loaded="Window_Loaded">
     <Grid>
-        <ComboBox HorizontalAlignment="Left" Margin="64,42,0,0" VerticalAlignment="Top" Width="156"  x:Name="boardSelect" SelectionChanged="SelectionChanged">
-            <ComboBoxItem IsSelected="True">DE0-Nano</ComboBoxItem>
-            <ComboBoxItem>StormIV-E6</ComboBoxItem>
+        <ComboBox HorizontalAlignment="Left" Margin="64,42,0,0" VerticalAlignment="Top" Width="156"  x:Name="boardSelect" SelectedIndex="0" SelectionChanged="SelectionChanged">
+            
         </ComboBox>
         <Label Content="Choose board" HorizontalAlignment="Left" Margin="58,16,0,0" VerticalAlignment="Top" Width="164"/>
         <Button Content="Cancel" HorizontalAlignment="Left" Margin="196,96,0,0" VerticalAlignment="Top" Width="76" IsCancel="True"/>

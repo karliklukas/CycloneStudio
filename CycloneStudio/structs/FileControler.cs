@@ -24,6 +24,7 @@ namespace CycloneStudio.structs
         private const string BLOCK_PATH = "..\\..\\components\\block";
         private const string SCRIPT_PATH = "..\\..\\scripts";
         private const string QUARTUS_PATH = "..\\..\\scripts\\path.txt";
+        private const string COMPONENTS_PATH = "..\\..\\components";
         private readonly RoutedEventHandler eventHandler;
         private readonly RoutedEventHandler eventCustomHandler;
         private string loadingText;
@@ -38,7 +39,7 @@ namespace CycloneStudio.structs
 
         public void GenerateMenuItems(Menu menu)
         {
-            DirectoryInfo d = new DirectoryInfo(@"..\\..\\components");
+            DirectoryInfo d = new DirectoryInfo(COMPONENTS_PATH);
             DirectoryInfo[] subdir = d.GetDirectories();
 
             ReadAndGenerateItems(menu, subdir);
@@ -138,14 +139,14 @@ namespace CycloneStudio.structs
             string text = File.ReadAllText(path);
             string[] textSplited = Regex.Split(text, "module ([\\w\\d]+[ ]?)\\(\\s*([\\w\\d,_\\]\\[:\\n\\s(]*)\\);");
             data.Name = textSplited[1].Remove(0, 1);
-            string dirPath = "..\\..\\components";
+            
             if (isBlock)
             {
                 data.FilePath = path.Replace('/', System.IO.Path.DirectorySeparatorChar);
             }
             else
             {
-                MakeRelativePath(path, data, dirPath);
+                MakeRelativePath(path, data, COMPONENTS_PATH);
             }
 
             if (data.FilePath.Contains("\\block\\"))
@@ -168,20 +169,33 @@ namespace CycloneStudio.structs
                         data.InPins.Add(pins[i].Remove(0, 9));
                     }
                 }
-
-                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d, ]+)[\\n|\\r\\n](\\/\\/position:\\s((\\d{1,3}),(\\d{1,3}),(\\w*)))?");
+                //\/\/hidden:\s([\w\d, ]+)[\n|\r\n](\/\/position:\s([;]?\d{1,3},\d{1,3},\w*)*)*
+                //\\/\\/hidden:\\s([\\w\\d, ]+)[\\n|\\r\\n](\\/\\/position:\\s((\\d{1,3}),(\\d{1,3}),(\\w*)))?
+                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d, ]+)[\\n|\\r\\n](\\/\\/position:\\s([;]?\\d{1,3},\\d{1,3},\\w*)*)?");
                 if (textSplitedTwo.Length > 1)
                 {
                     string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
                     data.HiddenPins = new List<string>(result);
+
                     if (textSplitedTwo[2].Contains("position"))
                     {
-                        data.BoardInfo = new BoardInfo
+                        string[] splitedBoards = Regex.Replace(textSplitedTwo[2], @"\s+", "").Split(';');
+                        List<BoardInfo> boardInfos = new List<BoardInfo>();
+
+                        foreach (string oneBoard in splitedBoards)
                         {
-                            MarginLeft = Int32.Parse(textSplitedTwo[4]),
-                            MarginTop = Int32.Parse(textSplitedTwo[5]),
-                            BoardName = textSplitedTwo[6]
-                        };
+                            string[] coordinatesAndName = Regex.Split(oneBoard, "((\\d{1,3}),(\\d{1,3}),(\\w*))");
+
+                            BoardInfo boardInfo = new BoardInfo
+                            {
+                                MarginLeft = Int32.Parse(coordinatesAndName[2]),
+                                MarginTop = Int32.Parse(coordinatesAndName[3]),
+                                BoardName = coordinatesAndName[4]
+                            };
+                            boardInfos.Add(boardInfo);
+                        }
+
+                        data.BoardInfo = boardInfos;
                     }
                 }
             }
@@ -390,22 +404,20 @@ namespace CycloneStudio.structs
 
         private bool CopyBuildScriptFiles(string targetPath, string boardName, string mainModuleName, HashSet<string> usedModules)
         {
-            string sourcePath = "";
+            string sourcePath = System.IO.Path.Combine(SCRIPT_PATH, boardName+"_TEMP");
             string scriptName = "";
 
             if (boardName == "DE0-Nano")
-            {
-                sourcePath = System.IO.Path.Combine(SCRIPT_PATH, "DE0-Nano_TEMP");
+            {                
                 scriptName = "DE0Nano";
             }
             else if (boardName == "StormIV-E6")
-            {
-                sourcePath = System.IO.Path.Combine(SCRIPT_PATH, "StormIV-E6_TEMP");
+            {                
                 scriptName = "StormIV";
             }
             else
-            {
-                return false;
+            {               
+                scriptName = boardName;
             }
 
             if (Directory.Exists(sourcePath))
@@ -750,6 +762,23 @@ namespace CycloneStudio.structs
 
             return false;
 
+        }
+
+
+        public List<string> GetAllBoards()
+        {
+            List<string> list = new List<string>();
+            string dirPathString = System.IO.Path.Combine(COMPONENTS_PATH, "board");
+
+            DirectoryInfo d = new DirectoryInfo(dirPathString);
+            DirectoryInfo[] subdir = d.GetDirectories();
+
+            foreach (DirectoryInfo info in subdir)
+            {
+                list.Add(info.Name);
+            }
+
+            return list;
         }
     }
 }

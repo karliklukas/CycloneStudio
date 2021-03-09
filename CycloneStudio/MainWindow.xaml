@@ -78,6 +78,8 @@
                 <MenuItem Header="_Save block" Click="Event_SaveBlock"/>
                 <Separator/>
                 <MenuItem Header="_Save as image" Click="Event_SaveAsImage"/>
+                <Separator/>
+                <MenuItem Header="_Close" Click="Event_Close"/>
             </MenuItem>
             <MenuItem Header="_Build" Height="30" Width="50" Click="Event_Build"/>
             <MenuItem Header="_Upload" Height="30" Width="60" Click="Event_Upload"/>
