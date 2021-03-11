@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:CycloneStudio"        
         mc:Ignorable="d"
         Icon="./graphics/icon.ico"
-        Title="Cyclone Studio v0.10" Height="550" Width="1000">
+        Title="Cyclone Studio v0.95" Height="550" Width="1000">
     <Window.Resources>
         <LinearGradientBrush x:Key="NormalBrush" StartPoint="0,0" EndPoint="0,1">
             <GradientBrush.GradientStops>

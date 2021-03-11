@@ -36,8 +36,7 @@ namespace CycloneStudio
         private bool isProject = false;
         private bool isBlock = false;
         private string actualProjectName;
-        private string choosenBoardName;
-        private string choosenBoardNameTemp;
+        private string choosenBoardName;        
         private int moduleId;
         private int wireId;
         private Double zoom = 1;
@@ -61,13 +60,11 @@ namespace CycloneStudio
             InitializeComponent();
 
             fileControler = new FileControler(new RoutedEventHandler(MenuItemGenerateModule), new RoutedEventHandler(MenuItemCustomPin));
-
-            //GenerateMenuItems();
+            
             moduleId = 0;
             wireId = 0;
             actualProjectName = "";
             choosenBoardName = "";
-            choosenBoardNameTemp = "";
             isProject = true;
             isBlock = false;
 
@@ -285,8 +282,9 @@ namespace CycloneStudio
 
             Grid el = (Grid)sender;
             Rectangle rec = (Rectangle)el.Tag;
-            Module module = (Module)rec.Tag;            
-           
+            Module module = (Module)rec.Tag;
+
+            string choosenBoardNameTemp;
             if (boardChoosen)
             {
                 choosenBoardNameTemp = choosenBoardName;
@@ -1432,8 +1430,7 @@ namespace CycloneStudio
             moduleId = 0;
             wireId = 0;
             actualProjectName = "";
-            choosenBoardName = "";
-            choosenBoardNameTemp = "";
+            choosenBoardName = "";            
             string txt = proj ? "– PROJECT" : "– BLOCK";
             this.Title = "Cyclone Studio " + txt;
 
@@ -1613,7 +1610,7 @@ namespace CycloneStudio
             if (isBlock)
             {
                 SaveProjectOrBlock(false);
-                BuildVerilogCode();
+                BuildVerilogCode("");
 
             }
             else
@@ -1718,6 +1715,7 @@ namespace CycloneStudio
                 MessageBox.Show("Please save project first.");
                 return;
             }
+            string choosenBoardNameTemp = "";
             if (!boardChoosen)
             {
                 BoardWindow boardWindow = new BoardWindow();
@@ -1732,7 +1730,7 @@ namespace CycloneStudio
                 }
             }
 
-            bool success = BuildVerilogCode();
+            bool success = BuildVerilogCode(choosenBoardNameTemp);
             if (success)
             {
                 MessageBox.Show("Success");
@@ -1744,7 +1742,7 @@ namespace CycloneStudio
 
         }
 
-        private bool BuildVerilogCode()
+        private bool BuildVerilogCode(string boardNameTemp)
         {            
 
             HashSet<string> usedModulesPath = new HashSet<string>();
@@ -1778,7 +1776,7 @@ namespace CycloneStudio
 
             if (isProject)
             {
-                string boardName = boardChoosen ? choosenBoardName : choosenBoardNameTemp;
+                string boardName = boardChoosen ? choosenBoardName : boardNameTemp;
 
                 return fileControler.BuildVerilogForProject(modules, actualProjectName, usedModulesPath, boardName);
             }

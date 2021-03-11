@@ -5,7 +5,7 @@ module cDISPLAY(
 	output wire SEGa, output wire SEGb, output wire SEGc, output wire SEGd, output wire SEGe, output wire SEGf,
 	output wire SEGg, output wire SEGh, output wire SEG1, output wire SEG2, output wire SEG3,output wire SEG4);
 //hidden: SEGa,SEGb,SEGc,SEGd,SEGe,SEGf,SEGg,SEGh,SEG1,SEG2,SEG3,SEG4
-
+//position: 393,348,StormIV
 
 assign SEGa = SEG_a;
 assign SEGb = SEG_b;

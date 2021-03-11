@@ -199,21 +199,12 @@
     <None Include="components\board\DE0-Nano\DE0Nano.qsf" />
     <None Include="components\board\StormIV-E6\cBeeper.v" />
     <None Include="components\board\StormIV-E6\cCLK_50MHz.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN11.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN12.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN13.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN14.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN15.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN16.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN17.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN18.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN19.v" />
-    <None Include="components\board\StormIV-E6\cIN_PIN20.v" />
+    <None Include="components\board\StormIV-E6\cDISPLAY.v" />
     <None Include="components\board\StormIV-E6\cKEY1.v" />
     <None Include="components\board\StormIV-E6\cKEY2.v" />
     <None Include="components\board\StormIV-E6\cKEY3.v" />
     <None Include="components\board\StormIV-E6\cKEY4.v" />
-    <None Include="components\board\StormIV-E6\cKEYreset.v" />
+    <None Include="components\board\StormIV-E6\cKEY_RESET.v" />
     <None Include="components\board\StormIV-E6\cLED1.v" />
     <None Include="components\board\StormIV-E6\cLED2.v" />
     <None Include="components\board\StormIV-E6\cLED3.v" />
@@ -222,17 +213,14 @@
     <None Include="components\board\StormIV-E6\cLED6.v" />
     <None Include="components\board\StormIV-E6\cLED7.v" />
     <None Include="components\board\StormIV-E6\cLED8.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN11.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN12.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN13.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN14.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN15.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN16.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN17.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN18.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN19.v" />
-    <None Include="components\board\StormIV-E6\cOUT_PIN20.v" />
     <None Include="components\board\StormIV-E6\cSWITCH.v" />
+    <None Include="components\comb\cBCD_DECODER.v" />
+    <None Include="components\comb\cMERGE2.v" />
+    <None Include="components\comb\cMERGE4.v" />
+    <None Include="components\comb\cMERGE8.v" />
+    <None Include="components\comb\cSPLIT2.v" />
+    <None Include="components\comb\cSPLIT4.v" />
+    <None Include="components\comb\cSPLIT8.v" />
     <None Include="components\io\cIN_PIN.v" />
     <None Include="components\io\cIN_PIN1.v" />
     <None Include="components\io\cIN_PIN10.v" />
@@ -264,11 +252,17 @@
     <None Include="components\logic\cNOR2.v" />
     <None Include="components\logic\cNOR3.v" />
     <None Include="components\logic\cNOR4.v" />
+    <None Include="components\logic\cNOT.v" />
     <None Include="components\logic\cOR2.v" />
     <None Include="components\logic\cOR3.v" />
     <None Include="components\logic\cOR4.v" />
     <None Include="components\logic\cXNOR2.v" />
     <None Include="components\logic\cXOR2.v" />
+    <None Include="components\sec\cD.v" />
+    <None Include="components\sec\cDIVIDE_BY10.v" />
+    <None Include="components\sec\cDIVIDE_BY2.v" />
+    <None Include="components\sec\cJK.v" />
+    <None Include="components\sec\cRS.v" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -284,8 +278,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="components\block\" />
-    <Folder Include="components\comb\" />
-    <Folder Include="components\sec\" />
     <Folder Include="scripts\StormIV-E6_TEMP\" />
   </ItemGroup>
   <ItemGroup>

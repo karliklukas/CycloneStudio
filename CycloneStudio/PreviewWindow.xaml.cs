@@ -32,7 +32,7 @@ namespace CycloneStudio
                 someGrid.Width = imageView.Source.Width;
                 arrowPointer.Margin = new Thickness(marginLeft - 21, marginTop - 25, 0, 0);
             }
-            catch (IOException e)
+            catch (IOException)
             {
                 Title = "BAD IMAGE";
             }
