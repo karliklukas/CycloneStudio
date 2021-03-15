@@ -267,18 +267,12 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="scripts\DE0-Nano_TEMP\build.bat" />
-    <None Include="scripts\DE0-Nano_TEMP\DE0Nano.qpf" />
-    <None Include="scripts\DE0-Nano_TEMP\DE0Nano.qsf" />
-    <None Include="scripts\DE0-Nano_TEMP\DE0Nano.qws" />
-    <None Include="scripts\DE0-Nano_TEMP\upload.bat" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="components\block\" />
-    <Folder Include="scripts\StormIV-E6_TEMP\" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
@@ -304,12 +298,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="graphics\save.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="graphics\DE0nano.jpg" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="graphics\stormIV.jpg" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="graphics\more.png" />

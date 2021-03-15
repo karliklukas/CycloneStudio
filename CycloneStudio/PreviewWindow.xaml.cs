@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Path = System.IO.Path;
 
 namespace CycloneStudio
 {
@@ -26,7 +28,11 @@ namespace CycloneStudio
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             try
             {
-                imageView.Source = new BitmapImage(new Uri(@"graphics/" + name + ".jpg", UriKind.RelativeOrAbsolute));
+                var lastFolder = Path.GetDirectoryName(Environment.CurrentDirectory);
+                var pathWithoutLastFolder = Path.GetDirectoryName(lastFolder);                
+                string ImagesDirectory = Path.Combine(pathWithoutLastFolder, "graphics"); 
+                Uri uri = new Uri(Path.Combine(ImagesDirectory, name + ".jpg"));
+                imageView.Source = new BitmapImage(uri);
                            
                 someGrid.Height = imageView.Source.Height;
                 someGrid.Width = imageView.Source.Width;
