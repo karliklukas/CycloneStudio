@@ -41,7 +41,7 @@ namespace CycloneStudio.structs
         public void GenerateMenuItems(Menu menu)
         {
             DirectoryInfo d = new DirectoryInfo(COMPONENTS_PATH);
-            DirectoryInfo[] subdir = d.GetDirectories();
+            DirectoryInfo[] subdir = d.GetDirectories().OrderBy(x => x.Name).ToArray();
 
             ReadAndGenerateItems(menu, subdir);
         }
@@ -140,7 +140,7 @@ namespace CycloneStudio.structs
             string text = File.ReadAllText(path);
             string[] textSplited = Regex.Split(text, "module ([\\w\\d]+[ ]?)\\(\\s*([\\w\\d,_\\]\\[:\\n\\s(]*)\\);");
             data.Name = textSplited[1].Remove(0, 1);
-            
+
             if (isBlock)
             {
                 data.FilePath = path.Replace('/', System.IO.Path.DirectorySeparatorChar);
@@ -337,7 +337,7 @@ namespace CycloneStudio.structs
             }
 
             if (CopyBuildScriptFiles(dirPathString, choosenBoardName, fileName, usedModules))
-            {                              
+            {
                 loadingTextTop = "Building...";
                 loadingTextBottom = "please wait about 30 sec";
                 CreateNewThread();
@@ -357,7 +357,7 @@ namespace CycloneStudio.structs
             else
             {
                 return false;
-            }            
+            }
         }
 
         private void CreateNewThread()
@@ -408,19 +408,19 @@ namespace CycloneStudio.structs
 
         private bool CopyBuildScriptFiles(string targetPath, string boardName, string mainModuleName, HashSet<string> usedModules)
         {
-            string sourcePath = System.IO.Path.Combine(SCRIPT_PATH, boardName+"_TEMP");
+            string sourcePath = System.IO.Path.Combine(SCRIPT_PATH, boardName + "_TEMP");
             string scriptName = "";
 
             if (boardName == "DE0-Nano")
-            {                
+            {
                 scriptName = "DE0Nano";
             }
             else if (boardName == "StormIV-E6")
-            {                
+            {
                 scriptName = "StormIV";
             }
             else
-            {               
+            {
                 scriptName = boardName;
             }
 
@@ -745,7 +745,7 @@ namespace CycloneStudio.structs
             string strCmdText = System.IO.Path.Combine(dirPathString, "upload.bat");
 
             if (File.Exists(strCmdText))
-            {                
+            {
                 loadingTextTop = "Uploading...";
                 loadingTextBottom = "please wait about 10 sec";
                 CreateNewThread();
