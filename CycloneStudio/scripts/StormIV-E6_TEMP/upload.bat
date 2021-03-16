@@ -1,7 +1,7 @@
 @ECHO OFF
 setlocal
  
-set PROJECT=DE0Nano
+set PROJECT=StormIV
 :: cesta k vyvojovemu prostredi QUARTUS
 set QUARTUSpath=
 set PATH=%QUARTUSpath%;%PATH%

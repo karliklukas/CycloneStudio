@@ -5,11 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CycloneStudio"
         mc:Ignorable="d"
-        Title="Loading" Height="355.462" Width="556.723" ResizeMode="NoResize" WindowStyle="None" WindowStartupLocation="CenterScreen" Background="#FF1A87C5">
+        Title="Loading" Height="200.134" Width="306.805" ResizeMode="NoResize" WindowStyle="None" WindowStartupLocation="CenterScreen" Background="#FF1A87C5">
     <Grid>
         <MediaElement x:Name="media" Margin="0" LoadedBehavior="Manual"  SpeedRatio="1" IsMuted="False" MediaEnded="Ended" />
-        <Label x:Name="labelTop" Content="Building..." HorizontalContentAlignment="Center" Margin="162,40,148,0" VerticalAlignment="Top" Height="68" Foreground="White" FontSize="36" FontFamily="Space Bd BT"/>
-        <Label Content="please wait" HorizontalContentAlignment="Center" Margin="162,247,148,0" VerticalAlignment="Top" Height="68" Foreground="White" FontSize="36" FontFamily="Space Bd BT"/>
+        <Label x:Name="labelTop" Content="Building..." HorizontalContentAlignment="Center" Margin="32,10,32,0" VerticalAlignment="Top" Height="68" Foreground="White" FontSize="28" FontFamily="Space Bd BT"/>
+        <Label x:Name="labelBottom" Content="please wait about 30 sec" HorizontalContentAlignment="Center" Margin="10,148,10,-16" VerticalAlignment="Top" Height="68" Foreground="White" FontSize="22" FontFamily="Space Bd BT"/>
 
     </Grid>
 </Window>

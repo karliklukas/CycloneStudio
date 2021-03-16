@@ -27,7 +27,8 @@ namespace CycloneStudio.structs
         private const string COMPONENTS_PATH = "..\\..\\components";
         private readonly RoutedEventHandler eventHandler;
         private readonly RoutedEventHandler eventCustomHandler;
-        private string loadingText;
+        private string loadingTextTop;
+        private string loadingTextBottom;
 
         public FileControler() { }
 
@@ -169,38 +170,42 @@ namespace CycloneStudio.structs
                         data.InPins.Add(pins[i].Remove(0, 9));
                     }
                 }
-                //\/\/hidden:\s([\w\d, ]+)[\n|\r\n](\/\/position:\s([;]?\d{1,3},\d{1,3},\w*)*)*
-                //\\/\\/hidden:\\s([\\w\\d, ]+)[\\n|\\r\\n](\\/\\/position:\\s((\\d{1,3}),(\\d{1,3}),(\\w*)))?
-                string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d, ]+)[\\n|\\r\\n](\\/\\/position:\\s([;]?\\d{1,3},\\d{1,3},\\w*)*)?");
-                if (textSplitedTwo.Length > 1)
-                {
-                    string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
-                    data.HiddenPins = new List<string>(result);
 
-                    if (textSplitedTwo[2].Contains("position"))
-                    {
-                        string[] splitedBoards = Regex.Replace(textSplitedTwo[2], @"\s+", "").Split(';');
-                        List<BoardInfo> boardInfos = new List<BoardInfo>();
-
-                        foreach (string oneBoard in splitedBoards)
-                        {
-                            string[] coordinatesAndName = Regex.Split(oneBoard, "((\\d{1,3}),(\\d{1,3}),(\\w*))");
-
-                            BoardInfo boardInfo = new BoardInfo
-                            {
-                                MarginLeft = Int32.Parse(coordinatesAndName[2]),
-                                MarginTop = Int32.Parse(coordinatesAndName[3]),
-                                BoardName = coordinatesAndName[4]
-                            };
-                            boardInfos.Add(boardInfo);
-                        }
-
-                        data.BoardInfo = boardInfos;
-                    }
-                }
+                ProcessHiddenAndPositions(data, textSplited);
             }
 
             return data;
+        }
+
+        private void ProcessHiddenAndPositions(MenuData data, string[] textSplited)
+        {
+            string[] textSplitedTwo = Regex.Split(textSplited[3], "\\/\\/hidden:\\s([\\w\\d, ]+)[\\n|\\r\\n](\\/\\/position:\\s([;]?\\d{1,3},\\d{1,3},\\w*)*)?");
+            if (textSplitedTwo.Length > 1)
+            {
+                string[] result = Regex.Replace(textSplitedTwo[1], @"\s+", "").Split(',');
+                data.HiddenPins = new List<string>(result);
+
+                if (textSplitedTwo[2].Contains("position"))
+                {
+                    string[] splitedBoards = Regex.Replace(textSplitedTwo[2], @"\s+", "").Split(';');
+                    List<BoardInfo> boardInfos = new List<BoardInfo>();
+
+                    foreach (string oneBoard in splitedBoards)
+                    {
+                        string[] coordinatesAndName = Regex.Split(oneBoard, "((\\d{1,3}),(\\d{1,3}),(\\w*))");
+
+                        BoardInfo boardInfo = new BoardInfo
+                        {
+                            MarginLeft = Int32.Parse(coordinatesAndName[2]),
+                            MarginTop = Int32.Parse(coordinatesAndName[3]),
+                            BoardName = coordinatesAndName[4]
+                        };
+                        boardInfos.Add(boardInfo);
+                    }
+
+                    data.BoardInfo = boardInfos;
+                }
+            }
         }
 
         private static void MakeRelativePath(string path, MenuData data, string dirPath)
@@ -332,16 +337,12 @@ namespace CycloneStudio.structs
             }
 
             if (CopyBuildScriptFiles(dirPathString, choosenBoardName, fileName, usedModules))
-            {
-                string strCmdText;
-                strCmdText = System.IO.Path.Combine(dirPathString, "build.bat");
-                loadingText = "Building...";
-                //strCmdText = "src/build.bat";
-                //System.Diagnostics.Process.Start("CMD.exe", strCmdText);
-                //err=0 vse je OK, tato cast trva min 30 sec
+            {                              
+                loadingTextTop = "Building...";
+                loadingTextBottom = "please wait about 30 sec";
                 CreateNewThread();
 
-                int err = cmdCommand(dirPathString, "build.bat");
+                int err = CmdCommand(dirPathString, "build.bat");
                 CloseWindowSafe();
                 if (err == 0)
                 {
@@ -369,20 +370,24 @@ namespace CycloneStudio.structs
 
         private void ThreadStartingPoint()
         {
-            loadingWindow = new LoadingWindow(loadingText);
+            loadingWindow = new LoadingWindow(loadingTextTop, loadingTextBottom);
             loadingWindow.Show();
             System.Windows.Threading.Dispatcher.Run();
         }
 
-        void CloseWindowSafe()
+        private void CloseWindowSafe()
         {
             if (loadingWindow.Dispatcher.CheckAccess())
+            {
                 loadingWindow.Close();
+            }
             else
+            {
                 loadingWindow.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new ThreadStart(loadingWindow.Close));
+            }
         }
 
-        private int cmdCommand(string path, string command)
+        private int CmdCommand(string path, string command)
         {
             int exitCode;
             ProcessStartInfo processInfo;
@@ -400,7 +405,6 @@ namespace CycloneStudio.structs
             process.Close();
             return exitCode;
         }
-
 
         private bool CopyBuildScriptFiles(string targetPath, string boardName, string mainModuleName, HashSet<string> usedModules)
         {
@@ -460,10 +464,10 @@ namespace CycloneStudio.structs
             File.WriteAllText(path, text);
 
             path = System.IO.Path.Combine(targetPath, "build.bat");
-            //ReplaceQuartusPath(path);
+            ReplaceQuartusPath(path);
 
             path = System.IO.Path.Combine(targetPath, "upload.bat");
-            //ReplaceQuartusPath(path);
+            ReplaceQuartusPath(path);
 
             return true;
         }
@@ -741,13 +745,12 @@ namespace CycloneStudio.structs
             string strCmdText = System.IO.Path.Combine(dirPathString, "upload.bat");
 
             if (File.Exists(strCmdText))
-            {
-                System.Diagnostics.Process.Start("CMD.exe", strCmdText);
-                return true;
-                /*loadingText = "Uploading...";                
+            {                
+                loadingTextTop = "Uploading...";
+                loadingTextBottom = "please wait about 10 sec";
                 CreateNewThread();
 
-                int err = cmdCommand(dirPathString, "upload.bat");
+                int err = CmdCommand(dirPathString, "upload.bat");
                 CloseWindowSafe();
                 if (err == 0)
                 {
@@ -756,14 +759,10 @@ namespace CycloneStudio.structs
                 else
                 {
                     return false;
-                }*/
-
+                }
             }
-
             return false;
-
         }
-
 
         public List<string> GetAllBoards()
         {

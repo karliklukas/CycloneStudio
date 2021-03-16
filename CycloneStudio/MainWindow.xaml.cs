@@ -89,7 +89,7 @@ namespace CycloneStudio
         }
 
         private void Window_ContentRendered(object sender, EventArgs e)
-        {
+        {           
             EntryWindow entryWindow = new EntryWindow();
             entryWindow.Owner = this;
             if (entryWindow.ShowDialog() == true)
@@ -663,8 +663,6 @@ namespace CycloneStudio
         private void MenuItemCustomPin(object sender, RoutedEventArgs e)
         {
             MenuItem el = sender as MenuItem;
-            //Console.WriteLine(el.Header);
-            //DeactivateMenuItem(el);
 
             var dialog = new InputDialog("Create pin", "Enter custom pin name.");
             if (dialog.ShowDialog() == true)
@@ -1097,46 +1095,17 @@ namespace CycloneStudio
                 endX = tmpX;
                 endY = tmpY;
             }
-
-            Polyline polyline = new Polyline
-            {
-                Stroke = Brushes.Black,
-                StrokeThickness = 2,
-                Effect = GetShadowEffect()
-            };
-            polyline.MouseLeftButtonUp += Poly_MouseLeftButtonUp;
-            polyline.MouseEnter += EventMouseOverLine;
-            polyline.MouseLeave += EventMouseLeaveLine;
-            // Create a collection of points for a polyline  
-            Point Point1 = new Point(startX + 10, startY);
-            double distance = Math.Abs(startX - endX);
-            Point Point3 = new Point(startX + (distance / 2), startY);
-            Point Point4 = new Point(startX + (distance / 2), endY);
-            Point Point5 = new Point(endX - 10, endY);
-
-            PointCollection polygonPoints = new PointCollection
-            {
-                Point1,
-                Point3,
-                Point4,
-                Point5
-            };
+            
             Label text = new Label
             {
                 Content = name,
                 Tag = data
-            };
-            polyline.Tag = text;
+            };            
 
             Canvas.SetLeft(text, startX + 6);
             Canvas.SetTop(text, startY - 25);
 
-            polyline.Points = polygonPoints;
-
-            //canvas.Children.Add(polyline);
-
-            ///////////////////////////////////////////
-            //Console.WriteLine(distance);
+            double distance = Math.Abs(startX - endX);
             double dis2 = 0;
             double dis3 = 0;
             if (distance < 100)
@@ -1163,8 +1132,8 @@ namespace CycloneStudio
             new Point(endX-10, endY)
             };
 
-            PolyLineSegment b = GetBezierApproximation(points, 256);
-            PathFigure pf = new PathFigure(b.Points[0], new[] { b }, false);
+            PolyLineSegment segment = GetBezierApproximation(points, 256);
+            PathFigure pf = new PathFigure(segment.Points[0], new[] { segment }, false);
 
             PathFigureCollection pfc = new PathFigureCollection();
             pfc.Add(pf);
@@ -1172,7 +1141,7 @@ namespace CycloneStudio
             PathGeometry pge = new PathGeometry();
             pge.Figures = pfc;
 
-            System.Windows.Shapes.Path p = new System.Windows.Shapes.Path
+            System.Windows.Shapes.Path finalPath = new System.Windows.Shapes.Path
             {
                 Effect = GetShadowEffect(),
                 Data = pge,
@@ -1181,14 +1150,14 @@ namespace CycloneStudio
                 Tag = text
             };
 
-            p.MouseLeftButtonUp += Poly_MouseLeftButtonUp;
-            p.MouseEnter += EventMouseOverLine;
-            p.MouseLeave += EventMouseLeaveLine;
+            finalPath.MouseLeftButtonUp += Poly_MouseLeftButtonUp;
+            finalPath.MouseEnter += EventMouseOverLine;
+            finalPath.MouseLeave += EventMouseLeaveLine;
 
-            canvas.Children.Add(p);
+            canvas.Children.Add(finalPath);
             canvas.Children.Add(text);
-            //return polyline;
-            return p;
+           
+            return finalPath;
         }
 
         PolyLineSegment GetBezierApproximation(Point[] controlPoints, int outputSegmentCount)
@@ -1440,11 +1409,18 @@ namespace CycloneStudio
                 mmMenu.Items.RemoveAt(3);
             }
             fileControler.GenerateMenuItems(mmMenu);
-            MenuItem item = mmMenu.Items[7] as MenuItem;
-            ((MenuItem)item.Items[0]).IsEnabled = isBlock;
-            ((MenuItem)item.Items[1]).IsEnabled = isBlock;
+            //MenuItem item = mmMenu.Items[7] as MenuItem;            
 
-            item = mmMenu.Items[1] as MenuItem;
+            foreach (MenuItem oneItem in mmMenu.Items)
+            {
+                if (oneItem.Header as string == "io")
+                {
+                    ((MenuItem)oneItem.Items[0]).IsEnabled = isBlock;
+                    ((MenuItem)oneItem.Items[1]).IsEnabled = isBlock;
+                }
+            }
+
+            MenuItem item = mmMenu.Items[1] as MenuItem;
             item.IsEnabled = proj;
             item = mmMenu.Items[2] as MenuItem;
             item.IsEnabled = proj;
@@ -1732,12 +1708,12 @@ namespace CycloneStudio
 
             bool success = BuildVerilogCode(choosenBoardNameTemp);
             if (success)
-            {
-                MessageBox.Show("Success");
+            {                
+                ShowInfoWindow("Compilation completed successfully");
             }
             else
-            {
-                MessageBox.Show("Error");
+            {                
+                ShowInfoWindow("Compilation completed with error");
             }
 
         }
@@ -1798,13 +1774,20 @@ namespace CycloneStudio
             bool success = fileControler.StartUpload(actualProjectName);
             if (success)
             {
-                MessageBox.Show("Success");
+                ShowInfoWindow("Upload completed successfully");
             }
             else
-            {
-                MessageBox.Show("Build project first.");
+            {               
+                ShowInfoWindow("Upload completed with error");
             }
 
+        }
+
+        private void ShowInfoWindow(string textInfo)
+        {
+            InfoWindow info = new InfoWindow(textInfo);
+            info.Owner = this;
+            info.ShowDialog();
         }
 
         private void Event_SaveAsImage(object sender, RoutedEventArgs e)

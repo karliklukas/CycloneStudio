@@ -19,21 +19,25 @@ namespace CycloneStudio
     /// </summary>
     public partial class LoadingWindow : Window
     {
-        public LoadingWindow(string text)
+        public LoadingWindow(string textTop, string textBottom)
         {
             InitializeComponent();
-            labelTop.Content = text;
+            labelTop.Content = textTop;
+            if (textBottom != "")
+            {
+                labelBottom.Content = textBottom;
+            }
             Uri uri = new Uri("..\\..\\graphics\\bb.gif", UriKind.RelativeOrAbsolute);
             media.Source = uri;
             media.Play();
-        }        
+        }
 
         private void Ended(object sender, RoutedEventArgs e)
-        {            
+        {
             media.Position = new TimeSpan(0, 0, 1);
             media.Play();
         }
 
-        
+
     }
 }
