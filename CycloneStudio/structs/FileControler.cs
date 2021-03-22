@@ -440,8 +440,6 @@ namespace CycloneStudio.structs
             }
 
             return ChangeScriptsSetting(targetPath, scriptName, mainModuleName, usedModules);
-
-            //return true;
         }
 
         private bool ChangeScriptsSetting(string targetPath, string scriptName, string mainModuleName, HashSet<string> usedModules)
@@ -558,7 +556,6 @@ namespace CycloneStudio.structs
             topPart.AppendLine("");
             topPart.AppendLine(middlePart.ToString());
 
-            //Console.WriteLine(topPart.ToString());
             return topPart.ToString();
         }
 

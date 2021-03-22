@@ -123,7 +123,6 @@ namespace CycloneStudio
             if (deleteToggle.IsChecked == true)
             {
                 DeleteModule(sender);
-
             }
             else if (handToggle.IsChecked == true)
             {
@@ -135,25 +134,25 @@ namespace CycloneStudio
 
                 int counter = 300;
                 Module module = (Module)rec.Tag;
+                el.CaptureMouse();
 
                 Panel.SetZIndex(el, counter++);
 
-                DeletePinsPolylines(module.InPins, ref counter);
-                DeletePinsPolylines(module.OutPins, ref counter);
+                DeletePinsConPaths(module.InPins, ref counter);
+                DeletePinsConPaths(module.OutPins, ref counter);
             }
-
         }
 
-        private void DeletePinsPolylines(List<Pin> data, ref int counter)
+        private void DeletePinsConPaths(List<Pin> data, ref int counter)
         {
             foreach (Pin pin in data)
             {
-                foreach (PolylineTagData po in pin.ActiveConnections)
+                foreach (ConnectionData po in pin.ActiveConnections)
                 {
                     if (po != null)
                     {
-                        canvas.Children.Remove((Label)po.Polyline.Tag);
-                        canvas.Children.Remove(po.Polyline);
+                        canvas.Children.Remove((Label)po.ConnectionPath.Tag);
+                        canvas.Children.Remove(po.ConnectionPath);
                     }
                 }
                 if (!pin.Hidden)
@@ -221,10 +220,10 @@ namespace CycloneStudio
         {
             foreach (Pin pin in pins)
             {
-                foreach (PolylineTagData data in pin.ActiveConnections)
+                foreach (ConnectionData data in pin.ActiveConnections)
                 {
                     Pin iopin;
-                    if (pin.Type == Types.IN)
+                    if (pin.Type == PinType.IN)
                     {
                         iopin = (Pin)data.RecPinOut.Tag;
                     }
@@ -233,18 +232,18 @@ namespace CycloneStudio
                         iopin = (Pin)data.RecPinIn.Tag;
                     }
 
-                    System.Windows.Shapes.Path poly = data.Polyline;
-                    Label label = (Label)poly.Tag;
+                    System.Windows.Shapes.Path conPath = data.ConnectionPath;
+                    Label label = (Label)conPath.Tag;
 
                     iopin.ActiveConnections.Remove(data);
 
-                    if (iopin.Type == Types.IN || iopin.ActiveConnections.Count == 0)
+                    if (iopin.Type == PinType.IN || iopin.ActiveConnections.Count == 0)
                     {
                         iopin.Connected = false;
                         iopin.Name_wire = "";
                     }
                     canvas.Children.Remove(label);
-                    canvas.Children.Remove(poly);
+                    canvas.Children.Remove(conPath);
                 }
                 canvas.Children.Remove(pin.Rectangle);
             }
@@ -256,6 +255,7 @@ namespace CycloneStudio
             EnableToggleButtons(true);
             Grid el = (Grid)sender;
             Rectangle rec = (Rectangle)el.Tag;
+            el.ReleaseMouseCapture();
             _isRectDragInProg = false;
 
             Module module = (Module)rec.Tag;
@@ -334,7 +334,7 @@ namespace CycloneStudio
         {
             if (!_isRectDragInProg) return;
             Grid el = (Grid)sender;
-            Rectangle rec = (Rectangle)el.Tag;
+            Rectangle rec = (Rectangle)el.Tag;           
 
             var mousePos = e.GetPosition(canvas);
 
@@ -355,15 +355,14 @@ namespace CycloneStudio
         {
             foreach (Pin r in data)
             {
-                foreach (PolylineTagData p in r.ActiveConnections)
+                foreach (ConnectionData p in r.ActiveConnections)
                 {
-                    //PolylineTagData p = (PolylineTagData)r?.Tag;
                     if (p != null)
                     {
                         CalculateNewCoordinates(p.RecPinIn, out double xs, out double ys);
                         CalculateNewCoordinates(p.RecPinOut, out double xe, out double ye);
 
-                        p.Polyline = GenerateLine(xs, ys, xe, ye, p.Wirename, p);
+                        p.ConnectionPath = GenerateLine(xs, ys, xe, ye, p.Wirename, p);
                     }
                 }
             }
@@ -381,9 +380,9 @@ namespace CycloneStudio
             Rectangle el = (Rectangle)sender;
             rectFrom = el;
             Pin pinInfo = (Pin)el.Tag;
-            Types startPinType = pinInfo.Type;
+            PinType startPinType = pinInfo.Type;
 
-            if (startPinType == Types.IN && pinInfo.Connected)
+            if (startPinType == PinType.IN && pinInfo.Connected)
             {
                 return;
             }
@@ -413,7 +412,7 @@ namespace CycloneStudio
             Panel.SetZIndex(line, 100);
         }
 
-        private void HighlightCorrectRectanglesPins(Pin pinInfo, Types startPinType)
+        private void HighlightCorrectRectanglesPins(Pin pinInfo, PinType startPinType)
         {
             deactivated.Clear();
             highlighted.Clear();
@@ -430,7 +429,7 @@ namespace CycloneStudio
 
                 foreach (Pin p in m.InPins)
                 {
-                    if (startPinType != Types.IN && !pinInfo.CompareConnections(p.Rectangle) && sameModule && p.ActiveConnections.Count == 0 && (pinInfo.IsBus == p.IsBus))
+                    if (startPinType != PinType.IN && !pinInfo.CompareConnections(p.Rectangle) && sameModule && p.ActiveConnections.Count == 0 && (pinInfo.IsBus == p.IsBus))
                     {
                         if (pinInfo.BusType == p.BusType)
                         {
@@ -452,7 +451,7 @@ namespace CycloneStudio
                 }
                 foreach (Pin p in m.OutPins)
                 {
-                    if (startPinType != Types.OUT && !pinInfo.CompareConnections(p.Rectangle) && sameModule && (pinInfo.IsBus == p.IsBus))
+                    if (startPinType != PinType.OUT && !pinInfo.CompareConnections(p.Rectangle) && sameModule && (pinInfo.IsBus == p.IsBus))
                     {
                         if (pinInfo.BusType == p.BusType)
                         {
@@ -496,12 +495,12 @@ namespace CycloneStudio
 
         private void CreateConnection(Pin pinFrom, Pin pinTo, Rectangle rFrom, Rectangle rTo)
         {
-            PolylineTagData data = new PolylineTagData();
+            ConnectionData data = new ConnectionData();
 
             string wireName = FindInOutPinsAndGenName(pinFrom, pinTo, rFrom, rTo, data);
 
             data.Wirename = wireName;
-            data.Polyline = GenerateLine(line.X1, line.Y1, line.X2, line.Y2, wireName, data);
+            data.ConnectionPath = GenerateLine(line.X1, line.Y1, line.X2, line.Y2, wireName, data);
 
             pinFrom.Connected = true;
             pinFrom.Name_wire = wireName;
@@ -511,18 +510,18 @@ namespace CycloneStudio
             pinTo.ActiveConnections.Add(data);
 
             pinPreviousStroke = 0;
-            Panel.SetZIndex(data.Polyline, 0);
+            Panel.SetZIndex(data.ConnectionPath, 0);
             canvas.Children.Remove(line);
             line = null;
             rectFrom = null;
             rectTo = null;
         }
 
-        private string FindInOutPinsAndGenName(Pin pinFrom, Pin pinTo, Rectangle rFrom, Rectangle rTo, PolylineTagData data)
+        private string FindInOutPinsAndGenName(Pin pinFrom, Pin pinTo, Rectangle rFrom, Rectangle rTo, ConnectionData data)
         {
             string wireName = "e";
 
-            if (pinFrom.Type == Types.IN)
+            if (pinFrom.Type == PinType.IN)
             {
                 data.RecPinIn = rFrom;
                 data.RecPinOut = rTo;
@@ -582,7 +581,7 @@ namespace CycloneStudio
             if (handToggle.IsChecked == false) return;
             Rectangle el = (Rectangle)sender;
             Pin p = el.Tag as Pin;
-            if (p.Connected && p.Type == Types.IN)
+            if (p.Connected && p.Type == PinType.IN)
             {
                 return;
             }
@@ -631,13 +630,13 @@ namespace CycloneStudio
         {
             if (deleteToggle.IsChecked == true)
             {
-                System.Windows.Shapes.Path poly = (System.Windows.Shapes.Path)sender;
-                if (!poly.IsHitTestVisible)
+                System.Windows.Shapes.Path conPath = (System.Windows.Shapes.Path)sender;
+                if (!conPath.IsHitTestVisible)
                 {
                     return;
                 }
-                poly.StrokeThickness = 4;
-                poly.Stroke = Brushes.Red;
+                conPath.StrokeThickness = 4;
+                conPath.Stroke = Brushes.Red;
                 if (this.Cursor != Cursors.Wait)
                     Mouse.OverrideCursor = Cursors.Cross;
             }
@@ -647,9 +646,9 @@ namespace CycloneStudio
         {
             if (deleteToggle.IsChecked == true)
             {
-                System.Windows.Shapes.Path poly = (System.Windows.Shapes.Path)sender;
-                poly.StrokeThickness = 2;
-                poly.Stroke = Brushes.Black;
+                System.Windows.Shapes.Path conPath = (System.Windows.Shapes.Path)sender;
+                conPath.StrokeThickness = 2;
+                conPath.Stroke = Brushes.Black;
                 if (this.Cursor != Cursors.Wait)
                     Mouse.OverrideCursor = Cursors.Arrow;
             }
@@ -685,8 +684,8 @@ namespace CycloneStudio
                     int pinsCount = Math.Max(inPins.Count(), outPins.Count());
                     CreateModule(newPinData, out Module module, out Grid hlavni, 10 + pinsCount * 30, true);
 
-                    CreatePinsFromList(newPinData.InPins, newPinData.HiddenPins, module, hlavni, 10, 15, Types.IN);
-                    CreatePinsFromList(newPinData.OutPins, newPinData.HiddenPins, module, hlavni, 130, 45, Types.OUT);
+                    CreatePinsFromList(newPinData.InPins, newPinData.HiddenPins, module, hlavni, 10, 15, PinType.IN);
+                    CreatePinsFromList(newPinData.OutPins, newPinData.HiddenPins, module, hlavni, 130, 45, PinType.OUT);
 
                     hlavni.Children.Add(CreateTextBlock(30, 0, module.Name, HorizontalAlignment.Center));
                     hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id, HorizontalAlignment.Left));
@@ -733,8 +732,8 @@ namespace CycloneStudio
             module.ModulesUsedInBlock.UnionWith(usedModulesNames);
             module.ModulesPathUsedInBlock.UnionWith(usedModulesPaths);
 
-            CreatePinsFromList(data.InPins, data.HiddenPins, module, hlavni, 10, 15, Types.IN);
-            CreatePinsFromList(data.OutPins, data.HiddenPins, module, hlavni, 130, 45, Types.OUT);
+            CreatePinsFromList(data.InPins, data.HiddenPins, module, hlavni, 10, 15, PinType.IN);
+            CreatePinsFromList(data.OutPins, data.HiddenPins, module, hlavni, 130, 45, PinType.OUT);
 
             hlavni.Children.Add(CreateTextBlock(30, 0, module.Name, HorizontalAlignment.Center));
             hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id, HorizontalAlignment.Left));
@@ -783,7 +782,7 @@ namespace CycloneStudio
             return true;
         }
 
-        private void CreatePinsFromList(List<string> pinsList, List<string> hiddenPins, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, Types pinType)
+        private void CreatePinsFromList(List<string> pinsList, List<string> hiddenPins, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, PinType pinType)
         {
             int topMargin = 30;
             int count = 0;
@@ -807,18 +806,18 @@ namespace CycloneStudio
                     }
 
                     HorizontalAlignment alignment = HorizontalAlignment.Left;
-                    if (pinType == Types.OUT)
+                    if (pinType == PinType.OUT)
                     {
                         alignment = HorizontalAlignment.Right;
                     }
                     hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName, alignment));
                 }
 
-                if (pinType == Types.IN)
+                if (pinType == PinType.IN)
                 {
                     module.InPins.Add(createdPin);
                 }
-                else if (pinType == Types.OUT)
+                else if (pinType == PinType.OUT)
                 {
                     module.OutPins.Add(createdPin);
                 }
@@ -859,14 +858,7 @@ namespace CycloneStudio
         }
 
         private static Label CreateTextBlock(int marginLeft, int marginTop, string text, HorizontalAlignment alignment)
-        {
-            /*return new TextBlock
-            {
-                Text = text,
-                Foreground = Brushes.Black,
-                FontSize = 9,
-                Margin = new Thickness(marginLeft, marginTop, 0, 0)
-            };*/
+        {            
             return new Label
             {
                 Content = text,
@@ -961,7 +953,7 @@ namespace CycloneStudio
             return myImage;
         }
 
-        private Pin CreatePin(int MarginLeft, int MarginTop, Types pinType, string name, string id, double marginLeft, double marginTop)
+        private Pin CreatePin(int MarginLeft, int MarginTop, PinType pinType, string name, string id, double marginLeft, double marginTop)
         {
             Rectangle rectangle = new Rectangle
             {
@@ -970,10 +962,10 @@ namespace CycloneStudio
                 Height = PINSIZE,
                 RadiusX = 2,
                 RadiusY = 2,
-                Fill = pinType == Types.OUT ? GetLinearGradientFillPinOut() : GetLinearGradientFillPinIn(),
+                Fill = pinType == PinType.OUT ? GetLinearGradientFillPinOut() : GetLinearGradientFillPinIn(),
                 Stroke = Brushes.OrangeRed,
                 StrokeThickness = 0,
-                Effect = pinType == Types.IN ? GetShadowEffect() : null
+                Effect = pinType == PinType.IN ? GetShadowEffect() : null
             };
 
             Pin pin = new Pin
@@ -996,7 +988,7 @@ namespace CycloneStudio
             return pin;
         }
 
-        private Pin CreateHiddenPin(Types pinType, string name, string id)
+        private Pin CreateHiddenPin(PinType pinType, string name, string id)
         {
             Rectangle rectangle = new Rectangle();
 
@@ -1029,11 +1021,9 @@ namespace CycloneStudio
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
         {
             if (!_isLineDrag) return;
-
-            // get the position of the mouse relative to the Canvas
+            
             var mousePos = e.GetPosition(canvas);
-
-            // center the rect on the mouse
+            
             if (line.X1 < mousePos.X)
             {
                 line.X2 = mousePos.X - 4;
@@ -1085,7 +1075,7 @@ namespace CycloneStudio
             e.Handled = true;
         }
 
-        private System.Windows.Shapes.Path GenerateLine(double startX, double startY, double endX, double endY, string name, PolylineTagData data)
+        private System.Windows.Shapes.Path GenerateLine(double startX, double startY, double endX, double endY, string name, ConnectionData data)
         {
             if (startX >= endX)
             {
@@ -1150,7 +1140,7 @@ namespace CycloneStudio
                 Tag = text
             };
 
-            finalPath.MouseLeftButtonUp += Poly_MouseLeftButtonUp;
+            finalPath.MouseLeftButtonUp += Path_MouseLeftButtonUp;
             finalPath.MouseEnter += EventMouseOverLine;
             finalPath.MouseLeave += EventMouseLeaveLine;
 
@@ -1180,7 +1170,7 @@ namespace CycloneStudio
             return new Point((1 - t) * P0.X + t * P1.X, (1 - t) * P0.Y + t * P1.Y);
         }
 
-        private void Poly_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void Path_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (deleteToggle.IsChecked == true)
             {
@@ -1189,7 +1179,7 @@ namespace CycloneStudio
                 {
                     System.Windows.Shapes.Path poly = (System.Windows.Shapes.Path)sender;
                     Label label = (Label)poly.Tag;
-                    PolylineTagData data = (PolylineTagData)label.Tag;
+                    ConnectionData data = (ConnectionData)label.Tag;
                     Pin inPin = (Pin)data.RecPinIn.Tag;
                     Pin outPin = (Pin)data.RecPinOut.Tag;
 
@@ -1346,14 +1336,12 @@ namespace CycloneStudio
         }
 
         private HashSet<string> RenderCanvasFromFile(SaveDataContainer container)
-        {
-            //ClearAll(false, false);
+        {            
             moduleId = container.ModuleId;
             wireId = container.WireId;
             choosenBoardName = container.Board;
 
             boardChoosen = choosenBoardName != "";
-
 
             List<Pin> activeOutPins = new List<Pin>();
             HashSet<string> usedModulesNames = new HashSet<string>();
@@ -1375,8 +1363,8 @@ namespace CycloneStudio
                 int pinsCount = Math.Max(inPins, outPins);
                 CreateModuleFromSave(item, out Module module, out Grid hlavni, 10 + pinsCount * 30);
 
-                CreatePinsFromListSave(item.InPins, module, hlavni, 10, 15, Types.IN);
-                CreatePinsFromListSave(item.OutPins, module, hlavni, 130, 45, Types.OUT);
+                CreatePinsFromListSave(item.InPins, module, hlavni, 10, 15, PinType.IN);
+                CreatePinsFromListSave(item.OutPins, module, hlavni, 130, 45, PinType.OUT);
 
                 hlavni.Children.Add(CreateTextBlock(30, 0, module.Name, HorizontalAlignment.Center));
                 hlavni.Children.Add(CreateTextBlock(30, (int)hlavni.Height - 15, module.Id, HorizontalAlignment.Left));
@@ -1408,8 +1396,7 @@ namespace CycloneStudio
             {
                 mmMenu.Items.RemoveAt(3);
             }
-            fileControler.GenerateMenuItems(mmMenu);
-            //MenuItem item = mmMenu.Items[7] as MenuItem;            
+            fileControler.GenerateMenuItems(mmMenu);           
 
             foreach (MenuItem oneItem in mmMenu.Items)
             {
@@ -1431,7 +1418,7 @@ namespace CycloneStudio
         {
             foreach (Pin item in activeOutPins)
             {
-                foreach (PolylineTagData oldData in item.ActiveConnections)
+                foreach (ConnectionData oldData in item.ActiveConnections)
                 {
                     Rectangle recIn = modules.Find(rec => ((Module)rec.Tag).Id == oldData.ModuleInId);
                     Rectangle recOut = modules.Find(rec => ((Module)rec.Tag).Id == oldData.ModuleOutId);
@@ -1442,7 +1429,7 @@ namespace CycloneStudio
                     Pin pinIn = moduleIn.InPins.Find(pin => pin.Name == oldData.PinInName);
                     Pin pinOut = moduleOut.OutPins.Find(pin => pin.Name == oldData.PinOutName);
 
-                    PolylineTagData data = new PolylineTagData();
+                    ConnectionData data = new ConnectionData();
                     data.RecPinIn = pinIn.Rectangle;
                     data.RecPinOut = pinOut.Rectangle;
 
@@ -1450,7 +1437,7 @@ namespace CycloneStudio
                     CalculateNewCoordinates(pinOut.Rectangle, out double x1, out double y1);
 
                     data.Wirename = oldData.Wirename;
-                    data.Polyline = GenerateLine(x, y, x1, y1, oldData.Wirename, data);
+                    data.ConnectionPath = GenerateLine(x, y, x1, y1, oldData.Wirename, data);
 
                     pinOut.Connected = true;
                     pinOut.Name_wire = oldData.Wirename;
@@ -1459,7 +1446,7 @@ namespace CycloneStudio
                     pinIn.Name_wire = oldData.Wirename;
                     pinIn.ActiveConnections.Add(data);
 
-                    Panel.SetZIndex(data.Polyline, 0);
+                    Panel.SetZIndex(data.ConnectionPath, 0);
                 }
             }
         }
@@ -1543,7 +1530,7 @@ namespace CycloneStudio
             canvas.Children.Add(hlavni);
         }
 
-        private void CreatePinsFromListSave(List<Pin> pinsList, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, Types pinType)
+        private void CreatePinsFromListSave(List<Pin> pinsList, Module module, Grid hlavni, int leftMarginPin, int leftMarginText, PinType pinType)
         {
             int topMargin = 30;
             int count = 0;
@@ -1563,18 +1550,18 @@ namespace CycloneStudio
                     createdPin.BusType = pinName.BusType;
 
                     HorizontalAlignment alignment = HorizontalAlignment.Left;
-                    if (pinType == Types.OUT)
+                    if (pinType == PinType.OUT)
                     {
                         alignment = HorizontalAlignment.Right;
                     }
                     hlavni.Children.Add(CreateTextBlock(leftMarginText, 15 + topMargin * (count++), pinName.Name, alignment));
                 }
 
-                if (pinType == Types.IN)
+                if (pinType == PinType.IN)
                 {
                     module.InPins.Add(createdPin);
                 }
-                else if (pinType == Types.OUT)
+                else if (pinType == PinType.OUT)
                 {
                     module.OutPins.Add(createdPin);
                 }

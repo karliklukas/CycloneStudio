@@ -103,7 +103,7 @@
     <Compile Include="structs\MenuData.cs" />
     <Compile Include="structs\Module.cs" />
     <Compile Include="structs\Pin.cs" />
-    <Compile Include="structs\PolylineTagData.cs" />
+    <Compile Include="structs\ConnectionData.cs" />
     <Compile Include="structs\FileControler.cs" />
     <Compile Include="structs\SaveDataContainer.cs" />
     <Page Include="BoardWindow.xaml">

@@ -8,41 +8,47 @@ using System.Windows.Shapes;
 namespace CycloneStudio.structs
 {
     [Serializable]
-    class PolylineTagData
-    {        
-        private string wirename;        
+    class ConnectionData
+    {
+        private string wirename;
+        private string moduleInId;
+        private string moduleOutId;
+        private string pinInName;
+        private string pinOutName;
+        [NonSerialized]
+        private Rectangle recpinin;
+        [NonSerialized]
+        private Rectangle recpinout;
+        [NonSerialized]
+        private Path connectionPath;
+
         public string Wirename { get => wirename; set => wirename = value; }
 
-        private string moduleInId;
+        
         public string ModuleInId
         {
             get { return moduleInId; }
             set { moduleInId = value; }
         }
-
-        private string moduleOutId;
+        
         public string ModuleOutId
         {
             get { return moduleOutId; }
             set { moduleOutId = value; }
         }
-
-        private string pinInName;
+        
         public string PinInName
         {
             get { return pinInName; }
             set { pinInName = value; }
         }
-
-        private string pinOutName;
+        
         public string PinOutName
         {
             get { return pinOutName; }
             set { pinOutName = value; }
         }
-
-        [NonSerialized]
-        private Rectangle recpinin;
+        
         public Rectangle RecPinIn
         {
             get { return recpinin; }
@@ -54,9 +60,7 @@ namespace CycloneStudio.structs
                 moduleInId = pin.ModuleId;
             }
         }
-
-        [NonSerialized]
-        private Rectangle recpinout;
+        
         public Rectangle RecPinOut
         {
             get { return recpinout; }
@@ -68,13 +72,11 @@ namespace CycloneStudio.structs
                 moduleOutId = pin.ModuleId;
             }
         }
-
-        [NonSerialized]
-        private Path polyline;
-        public Path Polyline
+        
+        public Path ConnectionPath
         {
-            get { return polyline; }
-            set { polyline = value; }
+            get { return connectionPath; }
+            set { connectionPath = value; }
         }
 
     }

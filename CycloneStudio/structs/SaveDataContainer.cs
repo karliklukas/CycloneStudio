@@ -11,8 +11,6 @@ namespace CycloneStudio.structs
     [Serializable]
     class SaveDataContainer
     {
-
-
         private List<Module> modules;
         private int moduleId;
         private int wireId;

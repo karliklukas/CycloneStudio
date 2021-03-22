@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Info" Height="144" Width="268.667" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Background="#FF1A87C5" WindowStyle="None">
     <Grid>
-        <Button Content="OK" HorizontalAlignment="Left" Margin="94,107,0,0" VerticalAlignment="Top" Width="75" BorderBrush="#FF005DFF" Click="OKButton_Click" IsDefault="True">
+        <Button Content="OK" HorizontalAlignment="Left" Margin="94,107,0,0" VerticalAlignment="Top" Width="75" BorderBrush="#FF005DFF" Click="OKButton_Click" IsDefault="True" FontFamily="Space Bd BT">
             <Button.Background>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                     <GradientStop Color="#FFCDCDCD" Offset="0"/>
