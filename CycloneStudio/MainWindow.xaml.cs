@@ -749,8 +749,8 @@ namespace CycloneStudio
             SaveDataContainer container = fileControler.OpenSaveFile(path, data.Name);
 
             string blockBoardName = container.Board;
-
-            if (boardChoosen && blockBoardName != choosenBoardName)
+            
+            if (boardChoosen && blockBoardName != choosenBoardName && blockBoardName != "")
             {
                 MessageBox.Show("Board used in block is different from board in project.");
                 return false;
