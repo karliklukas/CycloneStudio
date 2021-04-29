@@ -634,7 +634,7 @@ namespace CycloneStudio.structs
             }
             else
             {
-                Directory.Delete(System.IO.Path.Combine(BLOCK_PATH, name), true);
+               // Directory.Delete(System.IO.Path.Combine(BLOCK_PATH, name), true);
             }
 
         }
@@ -647,7 +647,7 @@ namespace CycloneStudio.structs
             }
         }
 
-        public bool SaveProjectOrBlock(string name, SaveDataContainer container, bool isProject, List<Module> customPins)
+        public bool SaveProjectOrBlock(string name, SaveDataContainer container, bool isProject, List<Module> customPins, bool sameFolder)
         {
             string path;
             if (isProject)
@@ -661,15 +661,19 @@ namespace CycloneStudio.structs
             string dirPathString = System.IO.Path.Combine(path, name);
             string filePathString = System.IO.Path.Combine(dirPathString, name + ".xml");
             Directory.CreateDirectory(dirPathString);
-
-            if (customPins.Count != 0)
+            if (sameFolder && File.Exists(filePathString))
+            {
+                File.Delete(filePathString);
+            }
+            
+            if (customPins.Count != 0 && !sameFolder)
             {
                 foreach (Module module in customPins)
                 {
                     int i = module.Path.LastIndexOf("\\");
                     string itenName = module.Path.Remove(0, i + 1);
                     string copyTarget = System.IO.Path.Combine(dirPathString, itenName);
-                    File.Copy(module.Path, copyTarget);
+                    File.Copy(module.Path, copyTarget, true);
                     module.Path = copyTarget;
                 }
             }

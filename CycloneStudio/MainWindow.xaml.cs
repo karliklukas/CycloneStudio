@@ -1601,11 +1601,18 @@ namespace CycloneStudio
             {
                 dialog.ResponseText = actualProjectName;
             }
-
+            
             if (dialog.ShowDialog() == true)
             {
                 string fileName = dialog.ResponseText;
                 string message = "";
+                string oldBlockName = actualProjectName;
+
+                bool sameFolder = false;
+                if (dialog.ResponseText == oldBlockName)
+                {
+                    sameFolder = true;
+                }
 
                 if (fileControler.CheckName(fileName, isProject))
                 {
@@ -1647,7 +1654,7 @@ namespace CycloneStudio
                     container.Modules.Add(m);
                 }
 
-                bool success = fileControler.SaveProjectOrBlock(fileName, container, isProject, customPins);
+                bool success = fileControler.SaveProjectOrBlock(fileName, container, isProject, customPins, sameFolder);
 
                 if (success)
                 {
