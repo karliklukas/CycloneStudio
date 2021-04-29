@@ -669,7 +669,7 @@ namespace CycloneStudio.structs
             string dirPathString = System.IO.Path.Combine(path, name);
             string filePathString = System.IO.Path.Combine(dirPathString, name + ".xml");
             Directory.CreateDirectory(dirPathString);
-            if (sameFolder && File.Exists(filePathString))
+            if (File.Exists(filePathString))
             {
                 File.Delete(filePathString);
             }
