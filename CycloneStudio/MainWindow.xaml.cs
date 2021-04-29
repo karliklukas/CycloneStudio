@@ -96,6 +96,7 @@ namespace CycloneStudio
             {
                 if (entryWindow.Confirm)
                 {
+                    fileControler.DeleteBlockTmpFolder();
                     ClearAll(entryWindow.isProject, entryWindow.isBlock);
                 }
                 else
@@ -177,6 +178,11 @@ namespace CycloneStudio
 
                 DeleteModulesPinsAndConnections(module.InPins);
                 DeleteModulesPinsAndConnections(module.OutPins);
+
+                /*if (module.CustomPin)
+                {
+                    fileControler.DeleteFile(module.Path);
+                }*/
 
                 if (Int32.TryParse(module.Id.Remove(0, 1), out int numValue))
                 {

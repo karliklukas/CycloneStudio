@@ -647,6 +647,14 @@ namespace CycloneStudio.structs
             }
         }
 
+        public void DeleteFile(string path)
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+
         public bool SaveProjectOrBlock(string name, SaveDataContainer container, bool isProject, List<Module> customPins, bool sameFolder)
         {
             string path;
