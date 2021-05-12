@@ -892,7 +892,7 @@ namespace CycloneStudio
                 CustomPin = customPin,
                 BoardInfo = data.BoardInfo
             };
-            Rectangle g = new Rectangle
+            Rectangle mainRectangle = new Rectangle
             {
                 Margin = new Thickness(0, 0, 0, 0),
                 Width = MODULEWIDHT,
@@ -913,7 +913,7 @@ namespace CycloneStudio
                 Width = MODULEWIDHT,
                 Height = height,
                 Background = Brushes.Transparent,
-                Tag = g,
+                Tag = mainRectangle,
                 Effect = GetShadowEffect()
             };
             Canvas.SetLeft(hlavni, 50);
@@ -921,8 +921,8 @@ namespace CycloneStudio
 
             Panel.SetZIndex(hlavni, 1);
 
-            hlavni.Children.Add(g);
-            modules.Add(g);
+            hlavni.Children.Add(mainRectangle);
+            modules.Add(mainRectangle);
             if (data.BoardInfo != null)
             {
                 Image myImage = CreateQuestionMarkImage(height);
